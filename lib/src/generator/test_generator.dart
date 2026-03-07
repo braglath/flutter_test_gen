@@ -6,13 +6,15 @@ import '../parser/dart_parser.dart';
 import '../utils/project_utils.dart';
 
 class TestGenerator {
+  final Map<String, String?> _importCache = {};
+  List<String> _lastGeneratedImports = [];
+
   Future<void> generate(
     String filePath, {
     bool append = true,
     bool overwrite = false,
   }) async {
     final parser = DartParser();
-
     final methods = parser.extractMethods(filePath);
 
     if (methods.isEmpty) {
@@ -27,16 +29,22 @@ class TestGenerator {
     final projectRoot = findProjectRoot(filePath);
     final projectName = getProjectName(projectRoot);
     final importPath = generateImportPath(filePath, projectRoot, projectName);
-
     final relativePath = _relativePath(filePath);
 
     final file = File(testPath);
-
     final existing = file.existsSync() ? await file.readAsString() : "";
 
-    final content = _generateTests(methods, importPath, relativePath, existing);
+    final content = _generateTests(
+      methods,
+      importPath,
+      relativePath,
+      existing,
+      projectRoot,
+      projectName,
+      filePath,
+    );
 
-    // create file if it doesn't exist
+    /// Create new file
     if (!file.existsSync()) {
       await file.create(recursive: true);
       await file.writeAsString(content);
@@ -45,7 +53,7 @@ class TestGenerator {
       return;
     }
 
-    // if file is empty
+    /// Empty file
     if (existing.trim().isEmpty) {
       await file.writeAsString(content);
 
@@ -53,7 +61,7 @@ class TestGenerator {
       return;
     }
 
-    // overwrite
+    /// Overwrite mode
     if (overwrite) {
       await file.writeAsString(content);
 
@@ -61,7 +69,7 @@ class TestGenerator {
       return;
     }
 
-    // append mode
+    /// Append mode
     if (append) {
       var updated = existing;
       bool changed = false;
@@ -79,21 +87,17 @@ class TestGenerator {
 
         final testCode = _generateSingleTest(method);
 
+        /// Existing group
         if (updated.contains("group('$groupName'")) {
           final groupStart = updated.indexOf("group('$groupName'");
           final groupEnd = _findGroupEnd(updated, groupStart);
 
-          if (groupEnd == -1) {
-            continue; // skip malformed group
-          }
+          if (groupEnd == -1) continue;
 
           final groupBlock = updated.substring(groupStart, groupEnd);
-
           final insertIndex = groupBlock.lastIndexOf("}");
 
-          if (insertIndex == -1) {
-            continue;
-          }
+          if (insertIndex == -1) continue;
 
           final newGroupBlock =
               "${groupBlock.substring(0, insertIndex)}\n$testCode\n${groupBlock.substring(insertIndex)}";
@@ -103,6 +107,7 @@ class TestGenerator {
               newGroupBlock +
               updated.substring(groupEnd);
         } else {
+          /// Create new group
           final index = updated.lastIndexOf("}");
 
           updated =
@@ -119,6 +124,24 @@ class TestGenerator {
       if (!changed) {
         print("✓ No new tests to append.");
         return;
+      }
+
+      /// Restore missing imports
+      for (final import in _lastGeneratedImports) {
+        if (!updated.contains(import)) {
+          final matches = RegExp(
+            "import\\s+['\\\"].*['\\\"];",
+          ).allMatches(updated);
+
+          int insertIndex = 0;
+
+          if (matches.isNotEmpty) {
+            insertIndex = matches.last.end;
+          }
+
+          updated =
+              "${updated.substring(0, insertIndex)}\n$import${updated.substring(insertIndex)}";
+        }
       }
 
       await file.writeAsString(updated);
@@ -207,10 +230,34 @@ class TestGenerator {
     String importPath,
     String relativePath,
     String existing,
+    String projectRoot,
+    String projectName,
+    String sourceFilePath,
   ) {
     final Map<String, List<MethodInfo>> classMethods = {};
+    final imports = <String>{};
 
     for (var method in methods) {
+      final returnImport = _resolveImport(
+        method.returnType,
+        projectRoot,
+        projectName,
+        sourceFilePath,
+      );
+
+      if (returnImport != null) imports.add(returnImport);
+
+      for (var param in method.parameters) {
+        final paramImport = _resolveImport(
+          param.type,
+          projectRoot,
+          projectName,
+          sourceFilePath,
+        );
+
+        if (paramImport != null) imports.add(paramImport);
+      }
+
       if (_shouldSkip(method)) continue;
 
       classMethods.putIfAbsent(method.className, () => []);
@@ -255,9 +302,12 @@ $tests
       }
     });
 
+    _lastGeneratedImports = imports.toList();
+
     return """
 import 'package:flutter_test/flutter_test.dart';
 import '$importPath';
+${imports.join('\n')}
 
 void main() {
 $groups
@@ -265,35 +315,108 @@ $groups
 """;
   }
 
+  String? _resolveImport(
+    String type,
+    String projectRoot,
+    String projectName,
+    String sourceFilePath,
+  ) {
+    final cleanType = type
+        .replaceAll('?', '')
+        .replaceAll(RegExp(r'<.*>'), '')
+        .trim();
+
+    if (_isPrimitive(cleanType)) return null;
+
+    if (_importCache.containsKey(cleanType)) {
+      return _importCache[cleanType];
+    }
+
+    final import = _findImportForType(
+      cleanType,
+      projectRoot,
+      projectName,
+      sourceFilePath,
+    );
+
+    _importCache[cleanType] = import;
+
+    return import;
+  }
+
+  String? _findImportForType(
+    String type,
+    String projectRoot,
+    String projectName,
+    String sourceFilePath,
+  ) {
+    final libDir = Directory('$projectRoot/lib');
+
+    for (final entity in libDir.listSync(recursive: true)) {
+      if (entity is! File) continue;
+
+      if (!entity.path.endsWith('.dart')) continue;
+
+      if (entity.path == sourceFilePath) continue;
+
+      final content = entity.readAsStringSync();
+
+      final classPattern = RegExp(r'class\s+' + type + r'(\s|{|<)');
+
+      if (classPattern.hasMatch(content)) {
+        final relativePath = entity.path.split('lib/').last;
+        return "import 'package:$projectName/$relativePath';";
+      }
+    }
+
+    return null;
+  }
+
   String _generateParams(List<MethodParameter> params) {
     if (params.isEmpty) return "";
-
     return params.map((p) => _generateValue(p.type)).join(", ");
   }
 
   String _generateValue(String type) {
-    switch (type) {
+    final cleanType = type.replaceAll(RegExp(r'<.*>'), '');
+
+    switch (cleanType) {
       case "int":
         return "1";
-
       case "String":
         return "'test'";
-
       case "bool":
         return "true";
-
       case "double":
         return "1.0";
-
       case "List":
         return "[]";
-
       case "Map":
         return "{}";
-
       default:
-        return "null";
+        return "$cleanType()";
     }
+  }
+
+  bool _isPrimitive(String type) {
+    const primitives = {
+      'int',
+      'double',
+      'String',
+      'bool',
+      'dynamic',
+      'void',
+      'num',
+      'Object',
+      'DateTime',
+      'List',
+      'Map',
+      'Set',
+      'Iterable',
+      'Future',
+    };
+
+    return primitives.contains(type);
   }
 
   String _relativePath(String absolutePath) {
