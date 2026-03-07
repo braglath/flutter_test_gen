@@ -433,6 +433,12 @@ $groups
       case "Map":
         return "{}";
 
+      case "Duration":
+        return "Duration(seconds: 1)";
+
+      case "Uri":
+        return "Uri.parse('https://example.com')";
+
       default:
         return "$cleanType()";
     }
