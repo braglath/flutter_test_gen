@@ -1,9 +1,7 @@
-# Flutter Test Gen
+# Flutter test generator (Flutter Test Gen)
 
 [![pub
-package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen)\
-[![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)\
-[![popularity](https://img.shields.io/pub/popularity/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)
+package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen) [![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)
 
 A CLI tool to **automatically generate unit tests for Flutter and Dart
 projects**.
@@ -11,8 +9,6 @@ projects**.
 `flutter_test_gen` analyzes Dart files and generates structured test
 templates, helping developers quickly start writing tests without
 manually creating boilerplate code.
-
----
 
 ## Features
 
@@ -32,8 +28,6 @@ manually creating boilerplate code.
   - extensions
 - CLI **help command**
 
----
-
 ## Installation
 
 Add the package to your project:
@@ -48,8 +42,6 @@ Then run:
 ```bash
 dart pub get
 ```
-
----
 
 ## Usage
 
@@ -71,11 +63,9 @@ For convenience, the command also works without `generate`:
 dart run flutter_test_gen user_service
 ```
 
----
-
 ## CLI Commands
 
-## Generate tests
+### Generate tests
 
 ```bash
 dart run flutter_test_gen generate <FILE_NAME>
@@ -83,9 +73,7 @@ dart run flutter_test_gen generate <FILE_NAME>
 
 Default behavior is **append missing tests**.
 
----
-
-## Append missing tests
+### Append missing tests
 
 ```bash
 dart run flutter_test_gen generate <FILE_NAME> --append
@@ -93,9 +81,7 @@ dart run flutter_test_gen generate <FILE_NAME> --append
 
 Adds only tests that do not already exist.
 
----
-
-## Overwrite existing tests
+### Overwrite existing tests
 
 ```bash
 dart run flutter_test_gen generate <FILE_NAME> --overwrite
@@ -103,29 +89,15 @@ dart run flutter_test_gen generate <FILE_NAME> --overwrite
 
 Recreates the test file completely.
 
----
-
-## Generate tests for all files
-
-```bash
-dart run flutter_test_gen --all
-```
-
-Scans the `lib/` directory and generates tests for all Dart files.
-
----
-
-## Show help
+### Show help
 
 ```bash
 dart run flutter_test_gen --help
 ```
 
----
-
 ## Example
 
-## Source file
+### Source file
 
 ```dart
 class UserService {
@@ -139,9 +111,7 @@ class UserService {
 }
 ```
 
----
-
-## Generated test
+### Generated test
 
 ```dart
 group('UserService | lib/user_service.dart', () {
@@ -173,8 +143,6 @@ group('UserService | lib/user_service.dart', () {
 });
 ```
 
----
-
 ## Behavior
 
 The generator:
@@ -186,14 +154,23 @@ The generator:
 - Prevents duplicate test generation
 - Does **not modify existing test structure**
 
----
-
 ## Requirements
 
 - Dart SDK
 - Flutter project (recommended)
 
----
+## Quick Demo
+
+_Generate tests for a service:_
+
+dart run flutter_test_gen generate user_service
+
+_Output:_
+
+✓ Found Dart file  
+✓ Parsed methods  
+✓ Generated test templates  
+✓ Appended missing tests
 
 ## Project Structure
 
@@ -215,8 +192,6 @@ flutter_test_gen
  └── pubspec.yaml
 ```
 
----
-
 ## Roadmap
 
 Planned improvements:
@@ -225,8 +200,6 @@ Planned improvements:
 - automatic mock generation
 - test coverage integration
 - watch mode for automatic test generation
-
----
 
 ## Contributing
 
@@ -237,20 +210,21 @@ Contributions are welcome.
 3. Commit your changes
 4. Open a pull request
 
----
-
 ## License
 
 MIT License
-
----
 
 ## Repository
 
 <https://github.com/YOUR_USERNAME/flutter_test_gen>
 
----
-
 ## Author
 
-Built to make **Flutter unit testing faster and easier**.
+Built by Flutter Zone to make **Flutter unit testing faster and easier**.
+
+## Keywords
+
+Flutter test generator  
+Dart test generator  
+Flutter unit test automation  
+Flutter testing CLI tool
