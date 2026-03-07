@@ -25,10 +25,7 @@ class DartParser {
 
         for (var member in declaration.members) {
           if (member is MethodDeclaration) {
-            // ignore constructors, getters, setters
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+            if (member.isGetter || member.isSetter) continue;
 
             methods.add(_parseMethod(member, className));
           }
@@ -43,9 +40,7 @@ class DartParser {
 
         for (var member in declaration.members) {
           if (member is MethodDeclaration) {
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+            if (member.isGetter || member.isSetter) continue;
 
             methods.add(_parseMethod(member, mixinName));
           }
@@ -60,9 +55,7 @@ class DartParser {
 
         for (var member in declaration.members) {
           if (member is MethodDeclaration) {
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+            if (member.isGetter || member.isSetter) continue;
 
             methods.add(_parseMethod(member, extensionName));
           }
@@ -76,20 +69,21 @@ class DartParser {
         final function = declaration.functionExpression;
 
         final methodName = declaration.name.lexeme;
-
         final returnType = declaration.returnType?.toSource() ?? "dynamic";
-
         final isAsync = function.body.isAsynchronous;
 
         final parameters =
             function.parameters?.parameters.map((p) {
-              final type = p is SimpleFormalParameter
-                  ? p.type?.toSource() ?? "dynamic"
-                  : "dynamic";
+              final param = _unwrapParameter(p);
 
-              final name = p.name.toString();
+              final type = param?.type?.toSource() ?? "dynamic";
+              final name = param?.name?.lexeme ?? "param";
 
-              return MethodParameter(name: name, type: type);
+              return MethodParameter(
+                name: name,
+                type: type,
+                isNamed: p.isNamed,
+              );
             }).toList() ??
             [];
 
@@ -120,13 +114,12 @@ class DartParser {
 
     final parameters =
         member.parameters?.parameters.map((p) {
-          final type = p is SimpleFormalParameter
-              ? p.type?.toSource() ?? "dynamic"
-              : "dynamic";
+          final param = _unwrapParameter(p);
 
-          final name = p.name.toString();
+          final type = param?.type?.toSource() ?? "dynamic";
+          final name = param?.name?.lexeme ?? "param";
 
-          return MethodParameter(name: name, type: type);
+          return MethodParameter(name: name, type: type, isNamed: p.isNamed);
         }).toList() ??
         [];
 
@@ -138,5 +131,25 @@ class DartParser {
       isStatic: isStatic,
       parameters: parameters,
     );
+  }
+
+  /// Handles named/default parameters like:
+  /// {required String name}
+  /// {int age = 10}
+  SimpleFormalParameter? _unwrapParameter(FormalParameter p) {
+    if (p is DefaultFormalParameter) {
+      final inner = p.parameter;
+
+      if (inner is SimpleFormalParameter) {
+        return inner;
+      }
+    }
+
+    if (p is SimpleFormalParameter) {
+      return p;
+    }
+
+    // fallback
+    return null;
   }
 }

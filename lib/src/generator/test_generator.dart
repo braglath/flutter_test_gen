@@ -182,7 +182,9 @@ class TestGenerator {
   String _generateSingleTest(MethodInfo method) {
     final asyncKeyword = method.isAsync ? "async" : "";
     final awaitKeyword = method.isAsync ? "await " : "";
-    final params = _generateParams(method.parameters);
+
+    final arrange = _generateArrange(method.parameters);
+    final params = _generateCallParams(method.parameters);
 
     String call;
 
@@ -199,6 +201,7 @@ class TestGenerator {
     test('${method.methodName}', () $asyncKeyword {
 
       // Arrange
+$arrange
 
       // Act
       $call;
@@ -214,6 +217,7 @@ class TestGenerator {
     test('${method.methodName}', () $asyncKeyword {
 
       // Arrange
+$arrange
 
       // Act
       final result = $awaitKeyword$call;
@@ -223,6 +227,33 @@ class TestGenerator {
 
     });
 """;
+  }
+
+  String _generateArrange(List<MethodParameter> params) {
+    if (params.isEmpty) return "";
+
+    final buffer = StringBuffer();
+
+    for (var param in params) {
+      final value = _generateValue(param.type);
+
+      buffer.writeln("      final ${param.name} = $value;");
+    }
+
+    return buffer.toString();
+  }
+
+  String _generateCallParams(List<MethodParameter> params) {
+    if (params.isEmpty) return "";
+
+    return params
+        .map((p) {
+          if (p.isNamed) {
+            return "${p.name}: ${p.name}";
+          }
+          return p.name;
+        })
+        .join(", ");
   }
 
   String _generateTests(
