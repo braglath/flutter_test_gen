@@ -14,6 +14,10 @@ class MethodInfo {
     required this.returnType,
     required this.isAsync,
     required this.isStatic,
-    required this.parameters,
-  });
+    List<MethodParameter> parameters = const [],
+  }) : parameters = List.unmodifiable(parameters);
+
+  bool get isTopLevel => className == '__top_level__';
+
+  bool get hasParameters => parameters.isNotEmpty;
 }

@@ -30,9 +30,6 @@ class UserService {
       UserModel().copyWith(email: () => email);
 
   static int add(int a, int b) => a + b;
-
-  // private method (should be ignored)
-  int _privateMethod() => 1;
 }
 
 // mixin class (should be ignored)
