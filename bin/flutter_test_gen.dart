@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter_test_gen/flutter_test_gen.dart';
+
+import '../lib/flutter_test_gen.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty ||
