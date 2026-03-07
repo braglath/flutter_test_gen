@@ -77,9 +77,7 @@ class TestGenerator {
       for (var method in methods) {
         if (_shouldSkip(method)) continue;
 
-        final testName = "test('${method.methodName}'";
-
-        if (existing.contains(testName)) continue;
+        if (_testExists(updated, method.methodName)) continue;
 
         final groupName = method.className == "__top_level__"
             ? "Functions | $relativePath"
@@ -179,6 +177,20 @@ class TestGenerator {
     return false;
   }
 
+  /// Add this right here
+  bool _testExists(String content, String methodName) {
+    // return content.contains("// test-gen:$methodName");
+
+    final escapedName = RegExp.escape(methodName);
+
+    final pattern = RegExp(
+      "(test|testWidgets)\\s*\\(\\s*['\"]$escapedName['\"]",
+      multiLine: true,
+    );
+
+    return pattern.hasMatch(content);
+  }
+
   String _generateSingleTest(MethodInfo method) {
     final asyncKeyword = method.isAsync ? "async" : "";
     final awaitKeyword = method.isAsync ? "await " : "";
@@ -196,9 +208,21 @@ class TestGenerator {
       call = "service.${method.methodName}($params)";
     }
 
+    final tagName = method.className == "__top_level__"
+        ? "globalFunction"
+        : method.className;
+
+    final marker = method.className == "__top_level__"
+        ? "// test-gen:${method.methodName}"
+        : "// test-gen:${method.className}.${method.methodName}";
+
+    final List<String> tags = [tagName, 'unit'];
+
     if (method.returnType == "void") {
       return """
     test('${method.methodName}', () $asyncKeyword {
+      
+      $marker
 
       // Arrange
 $arrange
@@ -209,12 +233,16 @@ $arrange
       // Assert
       // TODO: verify behaviour
 
-    });
+    },
+    tags: ${tags.map((t) => "'$t'").toList()},
+    );
 """;
     }
 
     return """
     test('${method.methodName}', () $asyncKeyword {
+
+      $marker
 
       // Arrange
 $arrange
@@ -225,7 +253,9 @@ $arrange
       // Assert
       expect(result, isNotNull);
 
-    });
+    },
+    tags: ${tags.map((t) => "'$t'").toList()},
+    );
 """;
   }
 
