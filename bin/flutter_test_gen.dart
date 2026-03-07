@@ -7,8 +7,27 @@ void main(List<String> args) async {
   if (args.isEmpty ||
       args.contains("--help") ||
       args.contains("-h") ||
-      args.contains("help")) {
+      args.first == "help") {
     _printHelp();
+    return;
+  }
+
+  final command = args.first;
+
+  switch (command) {
+    case "generate":
+      await _runGenerate(args.skip(1).toList());
+      break;
+
+    default:
+      // backward compatibility
+      await _runGenerate(args);
+  }
+}
+
+Future<void> _runGenerate(List<String> args) async {
+  if (args.isEmpty) {
+    print(AnsiStyles.red("Please provide a file name."));
     return;
   }
 
@@ -57,11 +76,12 @@ Flutter Test Generator
 
 Usage:
   dart run flutter_test_gen <file> [options]
+  dart run flutter_test_gen generate <file> [options]
 
 Examples:
-  dart run flutter_test_gen user_service
-  dart run flutter_test_gen user_service.dart
-  dart run flutter_test_gen lib/user_service.dart
+  dart run flutter_test_gen generate user_service
+  dart run flutter_test_gen generate user_service.dart
+  dart run flutter_test_gen generate lib/user_service.dart
 
 Options:
   --append       Append missing tests (default)
@@ -77,13 +97,13 @@ Behavior:
 Examples:
 
   Generate tests
-    dart run flutter_test_gen user_service
+    dart run flutter_test_gen generate user_service
 
   Overwrite existing tests
-    dart run flutter_test_gen user_service --overwrite
+    dart run flutter_test_gen generate user_service --overwrite
 
   Append only missing tests
-    dart run flutter_test_gen user_service --append
+    dart run flutter_test_gen generate user_service --append
 """),
   );
 }

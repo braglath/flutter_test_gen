@@ -127,7 +127,7 @@ class TestWriter {
             ? "${method.className}.${method.methodName}($params)"
             : "service.${method.methodName}($params)";
 
-    return TestTemplate.test(
+    return TestTemplates.test(
       name: method.methodName,
       arrange: arrange,
       call: call,

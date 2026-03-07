@@ -48,7 +48,7 @@ class TestBuilder {
       if (tests.isEmpty) return;
 
       groups.write(
-        TestTemplate.group(
+        TestTemplates.group(
           groupName: className == "__top_level__"
               ? "Functions | $relativePath"
               : "$className | $relativePath",
@@ -59,7 +59,7 @@ class TestBuilder {
       );
     });
 
-    return TestTemplate.file(
+    return TestTemplates.file(
       importPath: importPath,
       imports: _imports.join('\n'),
       groups: groups.toString(),
@@ -76,7 +76,7 @@ class TestBuilder {
             ? "${method.className}.${method.methodName}($params)"
             : "service.${method.methodName}($params)";
 
-    return TestTemplate.test(
+    return TestTemplates.test(
       name: method.methodName,
       arrange: arrange,
       call: call,

@@ -1,32 +1,36 @@
 # Flutter Test Gen
 
-[![pub package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen)
-[![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)
+[![pub
+package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen)\
+[![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)\
 [![popularity](https://img.shields.io/pub/popularity/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)
 
-A CLI tool to **automatically generate unit tests for Flutter/Dart methods**.
+A CLI tool to **automatically generate unit tests for Flutter and Dart
+projects**.
 
-It analyzes Dart files and creates test files with structured templates, allowing developers to quickly start writing tests without manually creating boilerplate code.
+`flutter_test_gen` analyzes Dart files and generates structured test
+templates, helping developers quickly start writing tests without
+manually creating boilerplate code.
 
 ---
 
 ## Features
 
-• Generate unit tests for **classes and top-level functions**
-• Automatically create the correct `test/` folder structure
-• **Append missing tests** to existing test files
-• **Restore deleted tests** inside groups
-• Adds Tags to each test
-• **Restore deleted groups**
-• Skip:
-
-- private methods
-- mixins
-- extensions
-
-• Supports **async methods**
-• Supports **static methods**
-• CLI help command for easy usage
+- Generate tests for **classes and top-level functions**
+- Automatically create the correct **`test/` folder structure**
+- **Append missing tests** to existing test files
+- **Restore deleted tests** inside groups
+- **Restore deleted groups**
+- Prevent **duplicate test generation**
+- Supports:
+  - async methods
+  - static methods
+- Adds **tags** to each test
+- Skips:
+  - private methods
+  - mixins
+  - extensions
+- CLI **help command**
 
 ---
 
@@ -52,50 +56,56 @@ dart pub get
 Generate tests for a Dart file:
 
 ```bash
-dart run flutter_test_gen <FILE_NAME>
+dart run flutter_test_gen generate user_service
 ```
 
-You can also specify a full path:
+You can also specify a full file path:
 
 ```bash
-dart run flutter_test_gen lib/services/user_service.dart
+dart run flutter_test_gen generate lib/services/user_service.dart
+```
+
+For convenience, the command also works without `generate`:
+
+```bash
+dart run flutter_test_gen user_service
 ```
 
 ---
 
 ## CLI Commands
 
-### Generate tests
+## Generate tests
 
 ```bash
-dart run flutter_test_gen <FILE_NAME>
+dart run flutter_test_gen generate <FILE_NAME>
 ```
 
 Default behavior is **append missing tests**.
 
 ---
 
-### Append missing tests
+## Append missing tests
 
 ```bash
-dart run flutter_test_gen <FILE_NAME> --append
+dart run flutter_test_gen generate <FILE_NAME> --append
 ```
 
 Adds only tests that do not already exist.
 
 ---
 
-### Overwrite existing tests
+## Overwrite existing tests
 
 ```bash
-dart run flutter_test_gen <FILE_NAME> --overwrite
+dart run flutter_test_gen generate <FILE_NAME> --overwrite
 ```
 
 Recreates the test file completely.
 
 ---
 
-### Generate tests for all files
+## Generate tests for all files
 
 ```bash
 dart run flutter_test_gen --all
@@ -105,7 +115,7 @@ Scans the `lib/` directory and generates tests for all Dart files.
 
 ---
 
-### Show help
+## Show help
 
 ```bash
 dart run flutter_test_gen --help
@@ -115,7 +125,7 @@ dart run flutter_test_gen --help
 
 ## Example
 
-### Source file
+## Source file
 
 ```dart
 class UserService {
@@ -129,7 +139,9 @@ class UserService {
 }
 ```
 
-### Generated test
+---
+
+## Generated test
 
 ```dart
 group('UserService | lib/user_service.dart', () {
@@ -163,29 +175,29 @@ group('UserService | lib/user_service.dart', () {
 
 ---
 
-## Behaviour
+## Behavior
 
 The generator:
 
-• Creates test files inside the `test/` directory
-• Groups tests by class name
-• Restores deleted tests if they are removed
-• Restores deleted groups if they are removed
-• Prevents duplicate test generation
-• Does **not modify existing test structure**
+- Creates test files inside the **`test/` directory**
+- Groups tests by **class name**
+- Restores deleted tests if they are removed
+- Restores deleted groups if they are removed
+- Prevents duplicate test generation
+- Does **not modify existing test structure**
 
 ---
 
 ## Requirements
 
-• Dart SDK
-• Flutter project (recommended)
+- Dart SDK
+- Flutter project (recommended)
 
 ---
 
 ## Project Structure
 
-```
+```text
 flutter_test_gen
  ├── bin/
  │   └── flutter_test_gen.dart
@@ -207,12 +219,12 @@ flutter_test_gen
 
 ## Roadmap
 
-Possible future improvements:
+Planned improvements:
 
-• Edge-case test generation
-• Mock generation
-• Coverage integration
-• Watch mode for automatic test generation
+- smarter test data generation
+- automatic mock generation
+- test coverage integration
+- watch mode for automatic test generation
 
 ---
 
@@ -241,4 +253,4 @@ MIT License
 
 ## Author
 
-Built to make writing Flutter unit tests faster and easier.
+Built to make **Flutter unit testing faster and easier**.

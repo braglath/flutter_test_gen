@@ -1,4 +1,4 @@
-class TestTemplate {
+class TestTemplates {
   static String group({
     required String groupName,
     required String className,
