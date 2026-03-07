@@ -16,6 +16,7 @@ It analyzes Dart files and creates test files with structured templates, allowin
 • Automatically create the correct `test/` folder structure
 • **Append missing tests** to existing test files
 • **Restore deleted tests** inside groups
+• Adds Tags to each test
 • **Restore deleted groups**
 • Skip:
 
@@ -51,7 +52,7 @@ dart pub get
 Generate tests for a Dart file:
 
 ```bash
-dart run flutter_test_gen user_service
+dart run flutter_test_gen <FILE_NAME>
 ```
 
 You can also specify a full path:
@@ -67,7 +68,7 @@ dart run flutter_test_gen lib/services/user_service.dart
 ### Generate tests
 
 ```bash
-dart run flutter_test_gen user_service
+dart run flutter_test_gen <FILE_NAME>
 ```
 
 Default behavior is **append missing tests**.
@@ -77,7 +78,7 @@ Default behavior is **append missing tests**.
 ### Append missing tests
 
 ```bash
-dart run flutter_test_gen user_service --append
+dart run flutter_test_gen <FILE_NAME> --append
 ```
 
 Adds only tests that do not already exist.
@@ -87,7 +88,7 @@ Adds only tests that do not already exist.
 ### Overwrite existing tests
 
 ```bash
-dart run flutter_test_gen user_service --overwrite
+dart run flutter_test_gen <FILE_NAME> --overwrite
 ```
 
 Recreates the test file completely.

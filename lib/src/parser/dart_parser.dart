@@ -6,6 +6,12 @@ import '../models/method_info.dart';
 import '../models/method_parameter.dart';
 
 class DartParser {
+  DartParser._internal();
+
+  static final DartParser _instance = DartParser._internal();
+
+  factory DartParser() => _instance;
+
   List<MethodInfo> extractMethods(String filePath) {
     final result = parseFile(
       path: filePath,
@@ -14,129 +20,108 @@ class DartParser {
 
     final unit = result.unit;
 
-    List<MethodInfo> methods = [];
+    final methods = <MethodInfo>[];
 
-    for (var declaration in unit.declarations) {
-      // ==========================
-      // CLASS METHODS
-      // ==========================
-      if (declaration is ClassDeclaration) {
-        final className = declaration.name.lexeme;
+    for (final declaration in unit.declarations) {
+      methods.addAll(_processDeclaration(declaration));
+    }
 
-        for (var member in declaration.members) {
-          if (member is MethodDeclaration) {
-            // ignore constructors, getters, setters
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+    return methods;
+  }
 
-            methods.add(_parseMethod(member, className));
-          }
-        }
-      }
+  List<MethodInfo> _processDeclaration(CompilationUnitMember declaration) {
+    if (declaration is ClassDeclaration) {
+      return _extractMembers(
+        containerName: declaration.name.lexeme,
+        members: declaration.members,
+      );
+    }
 
-      // ==========================
-      // MIXIN METHODS
-      // ==========================
-      if (declaration is MixinDeclaration) {
-        final mixinName = declaration.name.lexeme;
+    if (declaration is MixinDeclaration) {
+      return _extractMembers(
+        containerName: declaration.name.lexeme,
+        members: declaration.members,
+      );
+    }
 
-        for (var member in declaration.members) {
-          if (member is MethodDeclaration) {
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+    if (declaration is ExtensionDeclaration) {
+      return _extractMembers(
+        containerName: declaration.name?.lexeme ?? 'Extension',
+        members: declaration.members,
+      );
+    }
 
-            methods.add(_parseMethod(member, mixinName));
-          }
-        }
-      }
+    if (declaration is FunctionDeclaration) {
+      return [_parseTopLevelFunction(declaration)];
+    }
 
-      // ==========================
-      // EXTENSION METHODS
-      // ==========================
-      if (declaration is ExtensionDeclaration) {
-        final extensionName = declaration.name?.lexeme ?? "Extension";
+    return [];
+  }
 
-        for (var member in declaration.members) {
-          if (member is MethodDeclaration) {
-            if (member.isGetter || member.isSetter) {
-              continue;
-            }
+  List<MethodInfo> _extractMembers({
+    required String containerName,
+    required List<ClassMember> members,
+  }) {
+    final methods = <MethodInfo>[];
 
-            methods.add(_parseMethod(member, extensionName));
-          }
-        }
-      }
+    for (final member in members) {
+      if (member is MethodDeclaration) {
+        if (member.isGetter || member.isSetter) continue;
 
-      // ==========================
-      // TOP LEVEL FUNCTIONS
-      // ==========================
-      if (declaration is FunctionDeclaration) {
-        final function = declaration.functionExpression;
-
-        final methodName = declaration.name.lexeme;
-
-        final returnType = declaration.returnType?.toSource() ?? "dynamic";
-
-        final isAsync = function.body.isAsynchronous;
-
-        final parameters =
-            function.parameters?.parameters.map((p) {
-              final type = p is SimpleFormalParameter
-                  ? p.type?.toSource() ?? "dynamic"
-                  : "dynamic";
-
-              final name = p.name.toString();
-
-              return MethodParameter(name: name, type: type);
-            }).toList() ??
-            [];
-
-        methods.add(
-          MethodInfo(
-            className: "__top_level__",
-            methodName: methodName,
-            returnType: returnType,
-            isAsync: isAsync,
-            isStatic: true,
-            parameters: parameters,
-          ),
-        );
+        methods.add(_parseMethod(member, containerName));
       }
     }
 
     return methods;
   }
 
-  MethodInfo _parseMethod(MethodDeclaration member, String className) {
-    final methodName = member.name.lexeme;
+  MethodInfo _parseTopLevelFunction(FunctionDeclaration declaration) =>
+      MethodInfo(
+        className: '__top_level__',
+        methodName: declaration.name.lexeme,
+        returnType: declaration.returnType?.toSource() ?? 'dynamic',
+        isAsync: declaration.functionExpression.body.isAsynchronous,
+        isStatic: true,
+        parameters: _parseParameters(declaration.functionExpression.parameters),
+      );
 
-    final returnType = member.returnType?.toSource() ?? "dynamic";
+  MethodInfo _parseMethod(MethodDeclaration member, String className) =>
+      MethodInfo(
+        className: className,
+        methodName: member.name.lexeme,
+        returnType: member.returnType?.toSource() ?? 'dynamic',
+        isAsync: member.body.isAsynchronous,
+        isStatic: member.isStatic,
+        parameters: _parseParameters(member.parameters),
+      );
 
-    final isAsync = member.body.isAsynchronous;
+  List<MethodParameter> _parseParameters(FormalParameterList? parameterList) {
+    if (parameterList == null) return [];
 
-    final isStatic = member.isStatic;
+    return parameterList.parameters.map((p) {
+      final param = _unwrapParameter(p);
 
-    final parameters =
-        member.parameters?.parameters.map((p) {
-          final type = p is SimpleFormalParameter
-              ? p.type?.toSource() ?? "dynamic"
-              : "dynamic";
+      return MethodParameter(
+        name: param?.name?.lexeme ?? 'param',
+        type: param?.type?.toSource() ?? 'dynamic',
+        isNamed: p.isNamed,
+      );
+    }).toList();
+  }
 
-          final name = p.name.toString();
+  SimpleFormalParameter? _unwrapParameter(FormalParameter p) {
+    if (p is DefaultFormalParameter) {
+      final inner = p.parameter;
 
-          return MethodParameter(name: name, type: type);
-        }).toList() ??
-        [];
+      if (inner is SimpleFormalParameter) {
+        return inner;
+      }
+    }
 
-    return MethodInfo(
-      className: className,
-      methodName: methodName,
-      returnType: returnType,
-      isAsync: isAsync,
-      isStatic: isStatic,
-      parameters: parameters,
-    );
+    if (p is SimpleFormalParameter) {
+      return p;
+    }
+
+    return null;
   }
 }
