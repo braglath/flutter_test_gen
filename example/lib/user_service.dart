@@ -17,8 +17,17 @@ class UserService {
     required String name,
     required int age,
     bool isActive = true,
+    DateTime? createdAt,
   }) =>
-      UserModel(name: name, age: age, isActive: isActive);
+      UserModel(
+          name: name,
+          age: age,
+          isActive: isActive,
+          createdAt: createdAt ?? DateTime.now());
+
+  // default value test generator
+  UserModel updateEmail(String email) =>
+      UserModel().copyWith(email: () => email);
 
   static int add(int a, int b) => a + b;
 

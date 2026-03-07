@@ -59,10 +59,24 @@ void main() {
       final name = 'test';
       final age = 1;
       final isActive = true;
+      final createdAt = DateTime.now();
 
 
       // Act
-      final result = service.updateUser(isNewUser, name: name, age: age, isActive: isActive);
+      final result = service.updateUser(isNewUser, name: name, age: age, isActive: isActive, createdAt: createdAt);
+
+      // Assert
+      expect(result, isNotNull);
+
+    });
+    test('updateEmail', ()  {
+
+      // Arrange
+      final email = 'test';
+
+
+      // Act
+      final result = service.updateEmail(email);
 
       // Assert
       expect(result, isNotNull);
