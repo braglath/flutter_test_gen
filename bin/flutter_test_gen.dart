@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 
 void main(List<String> args) async {
@@ -14,14 +15,15 @@ void main(List<String> args) async {
   final input = args.first;
   final fileName = _normalizeFileName(input);
 
-  // flags
   final append = args.contains("--append");
   final overwrite = args.contains("--overwrite");
 
   final matches = _findFiles(fileName);
 
   if (matches.isEmpty) {
-    print("File not found inside lib/: $fileName");
+    print(
+      AnsiStyles.red("❌ File not found inside lib/: $fileName"),
+    );
     exit(1);
   }
 
@@ -33,17 +35,24 @@ void main(List<String> args) async {
     filePath = _selectFile(matches);
   }
 
+  print(
+    AnsiStyles.cyan(
+      "\n🚀 Generating tests for ${_relativePath(filePath)}\n",
+    ),
+  );
+
   final generator = TestGenerator();
 
   await generator.generate(
     filePath,
-    append: append || !overwrite, // append is default
+    append: append || !overwrite,
     overwrite: overwrite,
   );
 }
 
 void _printHelp() {
-  print("""
+  print(
+    AnsiStyles.green("""
 Flutter Test Generator
 
 Usage:
@@ -59,11 +68,11 @@ Options:
   --overwrite    Recreate the test file
   -h, --help     Show this help message
 
-Behaviour:
-  • Generates tests for classes and top-level functions.
-  • Restores deleted tests inside existing groups.
-  • Restores deleted groups.
-  • Skips private methods, mixins and extensions.
+Behavior:
+  • Generates tests for classes and top-level functions
+  • Restores deleted tests inside existing groups
+  • Restores deleted groups
+  • Skips private methods, mixins and extensions
 
 Examples:
 
@@ -75,16 +84,16 @@ Examples:
 
   Append only missing tests
     dart run flutter_test_gen user_service --append
-
-""");
+"""),
+  );
 }
 
 String _selectFile(List<String> matches) {
-  print("Multiple files found:\n");
+  print(AnsiStyles.yellow("Multiple files found:\n"));
 
   for (int i = 0; i < matches.length; i++) {
     final relative = _relativePath(matches[i]);
-    print("${i + 1}. $relative");
+    print("${AnsiStyles.cyan("${i + 1}.")} $relative");
   }
 
   stdout.write("\nSelect file: ");
@@ -94,7 +103,7 @@ String _selectFile(List<String> matches) {
   final index = int.tryParse(input ?? "");
 
   if (index == null || index < 1 || index > matches.length) {
-    print("Invalid selection.");
+    print(AnsiStyles.red("Invalid selection."));
     exit(1);
   }
 
@@ -121,6 +130,7 @@ String _normalizeFileName(String input) {
 
 List<String> _findFiles(String fileName) {
   final root = Directory.current;
+  // final root = Directory("lib");
 
   List<String> matches = [];
 
