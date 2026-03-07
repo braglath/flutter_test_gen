@@ -409,21 +409,30 @@ $groups
   }
 
   String _generateValue(String type) {
-    final cleanType = type.replaceAll(RegExp(r'<.*>'), '');
+    final cleanType = type.replaceAll('?', '').trim();
 
     switch (cleanType) {
       case "int":
         return "1";
+
       case "String":
         return "'test'";
+
       case "bool":
         return "true";
+
       case "double":
         return "1.0";
+
+      case "DateTime":
+        return "DateTime.now()";
+
       case "List":
         return "[]";
+
       case "Map":
         return "{}";
+
       default:
         return "$cleanType()";
     }
