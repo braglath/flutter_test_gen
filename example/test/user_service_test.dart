@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test_gen_example/user_model.dart';
 import 'package:flutter_test_gen_example/user_service.dart';
 
 void main() {
@@ -27,18 +28,28 @@ void main() {
       // Act
       final result = service.getAge();
 
-      // THIS IS NEW HERE
       // Assert
       expect(result, isNotNull);
     });
-  });
-  test('add', () {
-    // Arrange
 
-    // Act
-    final result = UserService.add(1, 1);
+    test('add', () {
+      // Arrange
 
-    // Assert
-    expect(result, isNotNull);
+      // Act
+      final result = UserService.add(1, 1);
+
+      // Assert
+      expect(result, isNotNull);
+    });
+
+    test('getUser', () {
+      // Arrange
+
+      // Act
+      final result = service.getUser(UserModel());
+
+      // Assert
+      expect(result, isNotNull);
+    });
   });
 }
