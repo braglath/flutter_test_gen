@@ -81,6 +81,7 @@ class TestBuilder {
       arrange: arrange,
       call: call,
       isAsync: method.isAsync,
+      isVoid: method.isVoid,
     );
   }
 
@@ -91,7 +92,7 @@ class TestBuilder {
 
     for (final param in params) {
       buffer.writeln(
-        "      final ${param.name} = ${_generateValue(param.type)};",
+        "      final ${param.name} = ${ProjectUtil().generateValue(param)};",
       );
     }
 
@@ -103,25 +104,6 @@ class TestBuilder {
       if (p.isNamed) return "${p.name}: ${p.name}";
       return p.name;
     }).join(", ");
-  }
-
-  String _generateValue(String type) {
-    final clean = type.replaceAll('?', '');
-
-    switch (clean) {
-      case "int":
-        return "1";
-      case "String":
-        return "'test'";
-      case "bool":
-        return "true";
-      case "double":
-        return "1.0";
-      case "DateTime":
-        return "DateTime.now()";
-      default:
-        return "$clean()";
-    }
   }
 
   bool _shouldSkip(MethodInfo method) {

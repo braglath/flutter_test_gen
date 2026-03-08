@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:yaml/yaml.dart';
 
 class ProjectUtil {
@@ -70,5 +71,43 @@ class ProjectUtil {
     }
 
     return name.toString();
+  }
+
+  bool isEnumType(String type) {
+    return ![
+      'String',
+      'int',
+      'double',
+      'bool',
+      'DateTime',
+      'dynamic',
+    ].contains(type.replaceAll('?', ''));
+  }
+
+  String generateValue(MethodParameter param) {
+    final type = param.type.replaceAll('?', '');
+
+    if (ProjectUtil().isEnumType(type)) {
+      return '$type.${defaultEnumValue(type)}';
+    }
+
+    switch (type) {
+      case "int":
+        return "1";
+      case "String":
+        return "'test'";
+      case "bool":
+        return "true";
+      case "double":
+        return "1.0";
+      case "DateTime":
+        return "DateTime.now()";
+      default:
+        return "$type()";
+    }
+  }
+
+  String defaultEnumValue(String enumName) {
+    return 'values.first';
   }
 }

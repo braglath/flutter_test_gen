@@ -32,22 +32,24 @@ $tests
     required String arrange,
     required String call,
     required bool isAsync,
+    required bool isVoid,
   }) {
     final asyncKeyword = isAsync ? "async" : "";
     final awaitKeyword = isAsync ? "await " : "";
+    final assertLogic = isVoid
+        ? "//TODO: implement your assert logic"
+        : "expect(result, isNotNull);";
 
+    // (name: $name, arrange: $arrange, call: $call, isAsync: $isAsync ,isVoid: $isVoid)
     return """
     test('$name', () $asyncKeyword {
-
       // Arrange
 $arrange
-
       // Act
       final result = $awaitKeyword$call;
 
       // Assert
-      expect(result, isNotNull);
-
+      $assertLogic
     });
 """;
   }
