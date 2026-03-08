@@ -23,6 +23,32 @@ class TestGenerator {
     final parser = DartParser();
     final methods = parser.extractMethods(filePath);
 
+    /// Detect constructor dependencies
+    if (methods.any((m) => m.dependencies.isNotEmpty)) {
+      print(
+        AnsiStyles.cyan(
+          "🔧 Detected constructor dependencies → generating mocks\n",
+        ),
+      );
+
+      /// Check if mocktail exists in pubspec.yaml
+      final pubspec = File('pubspec.yaml');
+
+      if (pubspec.existsSync()) {
+        final content = pubspec.readAsStringSync();
+
+        if (!content.contains('mocktail')) {
+          print(
+            AnsiStyles.yellow(
+              "⚠ mocktail dependency missing.\n"
+              "Run:\n"
+              "flutter pub add mocktail --dev\n",
+            ),
+          );
+        }
+      }
+    }
+
     if (methods.isEmpty) {
       print(AnsiStyles.yellow("⚠ No methods found."));
       return;
@@ -39,6 +65,7 @@ class TestGenerator {
     final existing = file.existsSync() ? await file.readAsString() : "";
 
     final builder = TestBuilder(project);
+    builder.generatedImports.add("import 'package:mocktail/mocktail.dart';");
 
     final content = builder.generate(
       methods,
