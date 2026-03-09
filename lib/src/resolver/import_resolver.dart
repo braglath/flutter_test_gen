@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import '../models/method_info.dart';
-import '../utils/project_utils.dart';
+import 'package:flutter_test_gen/src/models/method_info.dart';
+import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 class ImportResolver {
   final ProjectUtil project;
@@ -15,17 +15,29 @@ class ImportResolver {
     String sourceFilePath,
     Set<String> imports,
   ) {
+    for (final param in method.parameters) {
+      final type = param.type.replaceAll('?', '');
+
+      if (ProjectUtil().isEnumType(type)) {
+        final import = _resolveImport(type, sourceFilePath);
+
+        if (import != null) {
+          imports.add("import '$import';");
+        }
+      }
+    }
+
     final returnImport = _resolveImport(method.returnType, sourceFilePath);
 
     if (returnImport != null) {
-      imports.add(returnImport);
+      imports.add("import '$returnImport';");
     }
 
     for (final param in method.parameters) {
       final paramImport = _resolveImport(param.type, sourceFilePath);
 
       if (paramImport != null) {
-        imports.add(paramImport);
+        imports.add("import '$paramImport';");
       }
     }
   }
@@ -57,12 +69,14 @@ class ImportResolver {
 
       final content = entity.readAsStringSync();
 
-      final pattern = RegExp(r'class\s+' + type + r'(\s|{|<)');
+      final pattern = RegExp(
+        r'(class|enum|mixin|typedef)\s+' + type + r'(\s|{|<)',
+      );
 
       if (pattern.hasMatch(content)) {
         final relativePath = entity.path.split('lib/').last;
 
-        return "import 'package:${project.projectName}/$relativePath';";
+        return 'package:${project.projectName}/$relativePath';
       }
     }
 

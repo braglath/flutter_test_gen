@@ -1,16 +1,12 @@
 import 'dart:io';
 
+import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:yaml/yaml.dart';
 
 class ProjectUtil {
-  ProjectUtil._internal();
-  static final ProjectUtil _instance = ProjectUtil._internal();
-  factory ProjectUtil() => _instance;
-
   late final String _projectRoot;
   late final String _projectName;
 
-  /// Initialize once with any file path inside the project
   void initialize(String filePath) {
     _projectRoot = _findProjectRoot(filePath);
     _projectName = _loadProjectName();
@@ -46,7 +42,7 @@ class ProjectUtil {
       final parent = dir.parent;
 
       if (parent.path == dir.path) {
-        throw FileSystemException('pubspec.yaml not found');
+        throw const FileSystemException('pubspec.yaml not found');
       }
 
       dir = parent;
@@ -58,17 +54,96 @@ class ProjectUtil {
     final pubspecFile = File('$_projectRoot/pubspec.yaml');
 
     if (!pubspecFile.existsSync()) {
-      throw FileSystemException('pubspec.yaml not found in project root');
+      throw const FileSystemException('pubspec.yaml not found in project root');
     }
 
-    final yaml = loadYaml(pubspecFile.readAsStringSync());
+    final yaml = loadYaml(pubspecFile.readAsStringSync()) as Map;
 
-    final name = yaml['name'];
+    final String packageName = yaml['name']?.toString() ?? '';
 
-    if (name == null) {
-      throw FormatException('Project name not found in pubspec.yaml');
+    if (packageName.trim().isEmpty) {
+      throw const FormatException('Project name not found in pubspec.yaml');
     }
 
-    return name.toString();
+    return packageName.toString();
+  }
+
+  bool isEnumType(String type) => ![
+        'String',
+        'int',
+        'double',
+        'bool',
+        'DateTime',
+        'dynamic',
+      ].contains(type.replaceAll('?', ''));
+
+  String generateValue(MethodParameter param) {
+    final type = param.type.replaceAll('?', '');
+
+    if (ProjectUtil().isEnumType(type)) {
+      return '$type.${defaultEnumValue(type)}';
+    }
+
+    switch (type) {
+      case 'int':
+        return '1';
+      case 'String':
+        return "'test'";
+      case 'bool':
+        return 'true';
+      case 'double':
+        return '1.0';
+      case 'DateTime':
+        return 'DateTime.now()';
+      default:
+        return '$type()';
+    }
+  }
+
+  String defaultEnumValue(String enumName) => 'values.first';
+
+  String mockName(String type) => 'mock$type';
+
+  static bool isPrimitive(String type) => const [
+        'String',
+        'int',
+        'double',
+        'bool',
+        'num',
+        'DateTime',
+        'dynamic',
+      ].contains(type);
+
+  String mockReturnValue(String returnType) {
+    if (returnType.startsWith('Future<')) {
+      final inner =
+          returnType.replaceFirst('Future<', '').replaceFirst('>', '');
+
+      final value = primitiveValue(inner);
+
+      return 'thenAnswer((_) async => $value)';
+    }
+
+    return 'thenReturn(${primitiveValue(returnType)})';
+  }
+
+  String primitiveValue(String type) {
+    if (type.startsWith('Future<')) {
+      final inner = type.replaceFirst('Future<', '').replaceFirst('>', '');
+      return primitiveValue(inner);
+    }
+
+    switch (type) {
+      case 'int':
+        return '1';
+      case 'double':
+        return '1.0';
+      case 'bool':
+        return 'true';
+      case 'String':
+        return "'test'";
+      default:
+        return 'null';
+    }
   }
 }

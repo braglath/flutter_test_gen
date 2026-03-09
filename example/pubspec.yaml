@@ -14,3 +14,4 @@ dev_dependencies:
     sdk: flutter
   flutter_test_gen:
     path: ..
+  mocktail: ^1.0.0

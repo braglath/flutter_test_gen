@@ -1,10 +1,15 @@
 name: Dart CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches:
       - main
-      - features/**
+      - feature/**
+      - unit/**
   push:
     branches:
       - main
@@ -15,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Dart SDK
+      - name: Setup Dart
         uses: dart-lang/setup-dart@v1
 
       - name: Install dependencies
@@ -33,13 +38,18 @@ jobs:
       - name: Run tests with coverage
         run: dart test --coverage=coverage
 
-      - name: Install coverage tool
+      - name: Install coverage tools
         run: dart pub global activate coverage
 
-      - name: Format coverage
-        run: format_coverage --lcov --in=coverage --out=coverage/lcov.info --report-on=lib
+      - name: Convert coverage
+        run: |
+          format_coverage \
+            --lcov \
+            --in=coverage \
+            --out=coverage/lcov.info \
+            --report-on=lib
 
-      - name: Enforce coverage >= 80%
+      - name: Check coverage >= 80%
         run: |
           COVERAGE=$(grep -o 'LF:[0-9]*' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc)
           HIT=$(grep -o 'LH:[0-9]*' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc)
@@ -51,3 +61,11 @@ jobs:
             echo "Coverage below 80%"
             exit 1
           fi
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+
+      - name: Pub publish check
+        run: dart pub publish --dry-run

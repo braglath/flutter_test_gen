@@ -1,9 +1,9 @@
 import 'dart:io';
 
+import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
-
-import '../models/method_info.dart';
+import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 class TestWriter {
   String? process({
@@ -33,8 +33,8 @@ class TestWriter {
       if (_testExists(updated, method.methodName)) continue;
 
       final groupName = method.isTopLevel
-          ? "Functions | $relativePath"
-          : "${method.className} | $relativePath";
+          ? 'Functions | $relativePath'
+          : '${method.className} | $relativePath';
 
       final testCode = _generateAppendTest(method);
 
@@ -47,24 +47,24 @@ class TestWriter {
 
         final block = updated.substring(start, end);
 
-        final insertIndex = block.lastIndexOf("}");
+        final insertIndex = block.lastIndexOf('}');
 
         if (insertIndex == -1) continue;
 
         final newBlock =
-            "${block.substring(0, insertIndex)}\n$testCode\n${block.substring(insertIndex)}";
+            '${block.substring(0, insertIndex)}\n$testCode\n${block.substring(insertIndex)}';
 
         updated =
             updated.substring(0, start) + newBlock + updated.substring(end);
       } else {
         /// create new group
-        final index = updated.lastIndexOf("}");
+        final index = updated.lastIndexOf('}');
 
-        updated = "${updated.substring(0, index)}\n"
+        updated = '${updated.substring(0, index)}\n'
             "  group('$groupName', () {\n"
-            "$testCode\n"
-            "  });\n"
-            "}";
+            '$testCode\n'
+            '  });\n'
+            '}';
       }
 
       changed = true;
@@ -79,8 +79,8 @@ class TestWriter {
 
   bool _shouldSkip(MethodInfo method) {
     if (method.methodName.startsWith('_')) return true;
-    if (method.className.endsWith("Mixin")) return true;
-    if (method.className.contains("Ext")) return true;
+    if (method.className.endsWith('Mixin')) return true;
+    if (method.className.contains('Ext')) return true;
     return false;
   }
 
@@ -122,16 +122,29 @@ class TestWriter {
     final params = _generateCallParams(method.parameters);
 
     final call = method.isTopLevel
-        ? "${method.methodName}($params)"
+        ? '${method.methodName}($params)'
         : method.isStatic
-            ? "${method.className}.${method.methodName}($params)"
-            : "service.${method.methodName}($params)";
+            ? '${method.className}.${method.methodName}($params)'
+            : 'service.${method.methodName}($params)';
+
+    final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+
+    final verifyCall = method.dependencies.isEmpty
+        ? ''
+        : method.dependencies.map((dep) {
+            final mockVar =
+                'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
+            return '      verify(() => $mockVar.${method.methodName}()).called(1);';
+          }).join('\n');
 
     return TestTemplates.test(
       name: method.methodName,
       arrange: arrange,
       call: call,
+      expectedValue: expectedValue,
+      verifyCall: verifyCall,
       isAsync: method.isAsync,
+      isVoid: method.isVoid,
     );
   }
 
@@ -146,23 +159,23 @@ class TestWriter {
 
       final matches = RegExp(r"import\s+'[^']+';").allMatches(updated);
 
-      int insertIndex = matches.isEmpty ? 0 : matches.last.end;
+      final int insertIndex = matches.isEmpty ? 0 : matches.last.end;
 
       updated =
-          "${updated.substring(0, insertIndex)}\n$import${updated.substring(insertIndex)}";
+          '${updated.substring(0, insertIndex)}\n$import${updated.substring(insertIndex)}';
     }
 
     return updated;
   }
 
   String _generateArrange(List<MethodParameter> params) {
-    if (params.isEmpty) return "";
+    if (params.isEmpty) return '';
 
     final buffer = StringBuffer();
 
     for (final param in params) {
       buffer.writeln(
-        "      final ${param.name} = ${_generateValue(param.type)};",
+        '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
       );
     }
 
@@ -170,30 +183,11 @@ class TestWriter {
   }
 
   String _generateCallParams(List<MethodParameter> params) {
-    if (params.isEmpty) return "";
+    if (params.isEmpty) return '';
 
     return params.map((p) {
-      if (p.isNamed) return "${p.name}: ${p.name}";
+      if (p.isNamed) return '${p.name}: ${p.name}';
       return p.name;
-    }).join(", ");
-  }
-
-  String _generateValue(String type) {
-    final clean = type.replaceAll('?', '');
-
-    switch (clean) {
-      case "int":
-        return "1";
-      case "String":
-        return "'test'";
-      case "bool":
-        return "true";
-      case "double":
-        return "1.0";
-      case "DateTime":
-        return "DateTime.now()";
-      default:
-        return "$clean()";
-    }
+    }).join(', ');
   }
 }

@@ -1,12 +1,11 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
-
-import '../parser/dart_parser.dart';
-import '../utils/path_utils.dart';
-import '../utils/project_utils.dart';
-import '../writer/test_writer.dart';
-import 'test_builder.dart';
+import 'package:flutter_test_gen/src/generator/test_builder.dart';
+import 'package:flutter_test_gen/src/parser/dart_parser.dart';
+import 'package:flutter_test_gen/src/utils/path_utils.dart';
+import 'package:flutter_test_gen/src/utils/project_utils.dart';
+import 'package:flutter_test_gen/src/writer/test_writer.dart';
 
 class TestGenerator {
   TestGenerator._internal();
@@ -23,8 +22,34 @@ class TestGenerator {
     final parser = DartParser();
     final methods = parser.extractMethods(filePath);
 
+    /// Detect constructor dependencies
+    if (methods.any((m) => m.dependencies.isNotEmpty)) {
+      print(
+        AnsiStyles.cyan(
+          '🔧 Detected constructor dependencies → generating mocks\n',
+        ),
+      );
+
+      /// Check if mocktail exists in pubspec.yaml
+      final pubspec = File('pubspec.yaml');
+
+      if (pubspec.existsSync()) {
+        final content = pubspec.readAsStringSync();
+
+        if (!content.contains('mocktail')) {
+          print(
+            AnsiStyles.yellow(
+              '⚠ mocktail dependency missing.\n'
+              'Run:\n'
+              'flutter pub add mocktail --dev\n',
+            ),
+          );
+        }
+      }
+    }
+
     if (methods.isEmpty) {
-      print(AnsiStyles.yellow("⚠ No methods found."));
+      print(AnsiStyles.yellow('⚠ No methods found.'));
       return;
     }
 
@@ -36,9 +61,10 @@ class TestGenerator {
 
     final file = File(testPath);
 
-    final existing = file.existsSync() ? await file.readAsString() : "";
+    final existing = file.existsSync() ? await file.readAsString() : '';
 
     final builder = TestBuilder(project);
+    builder.generatedImports.add("import 'package:mocktail/mocktail.dart';");
 
     final content = builder.generate(
       methods,
@@ -67,7 +93,7 @@ class TestGenerator {
 
       print(
         AnsiStyles.green(
-          "✓ Generated: ${PathUtils.relativePath(testPath)}",
+          '✓ Generated: ${PathUtils.relativePath(testPath)}',
         ),
       );
       return;
@@ -78,7 +104,7 @@ class TestGenerator {
 
       print(
         AnsiStyles.green(
-          "✓ Generated: ${PathUtils.relativePath(testPath)}",
+          '✓ Generated: ${PathUtils.relativePath(testPath)}',
         ),
       );
       return;
@@ -89,7 +115,7 @@ class TestGenerator {
 
       print(
         AnsiStyles.magenta(
-          "✎ Overwritten: ${PathUtils.relativePath(testPath)}",
+          '✎ Overwritten: ${PathUtils.relativePath(testPath)}',
         ),
       );
       return;
@@ -97,7 +123,7 @@ class TestGenerator {
 
     if (append) {
       if (result == null || result == existing) {
-        print(AnsiStyles.yellow("✓ No new tests to append."));
+        print(AnsiStyles.yellow('✓ No new tests to append.'));
         return;
       }
 
@@ -105,7 +131,7 @@ class TestGenerator {
 
       print(
         AnsiStyles.blue(
-          "➕ Appended tests: ${PathUtils.relativePath(testPath)}",
+          '➕ Appended tests: ${PathUtils.relativePath(testPath)}',
         ),
       );
     }
