@@ -35,6 +35,7 @@ Add the package to your project:
 ```yaml
 dev_dependencies:
   flutter_test_gen: ^0.0.1
+  mocktail: ^1.0.0 # only when you want to mock dependencies
 ```
 
 Then run:
