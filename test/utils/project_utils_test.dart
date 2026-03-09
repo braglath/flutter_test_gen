@@ -66,10 +66,9 @@ description: test
     });
 
     test('generateValue should generate primitive values', () {
-      final param = MethodParameter(
+      final param = const MethodParameter(
         name: 'age',
         type: 'int',
-        isNamed: false,
       );
 
       final result = projectUtil.generateValue(param);
@@ -78,10 +77,9 @@ description: test
     });
 
     test('generateValue should generate enum default value', () {
-      final param = MethodParameter(
+      final param = const MethodParameter(
         name: 'gender',
         type: 'UserGender',
-        isNamed: false,
       );
 
       final result = projectUtil.generateValue(param);

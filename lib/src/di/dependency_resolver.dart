@@ -85,15 +85,13 @@ class DependencyResolver {
     return null;
   }
 
-  static bool _isPrimitive(String type) {
-    return const {
-      'int',
-      'double',
-      'bool',
-      'String',
-      'num',
-      'dynamic',
-      'DateTime',
-    }.contains(type);
-  }
+  static bool _isPrimitive(String type) => const {
+        'int',
+        'double',
+        'bool',
+        'String',
+        'num',
+        'dynamic',
+        'DateTime',
+      }.contains(type);
 }

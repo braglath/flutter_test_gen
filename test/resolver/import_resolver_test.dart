@@ -58,7 +58,7 @@ void main() {
 
       resolver.collectImports(method, sourceFilePath, imports);
 
-      expect(imports.first, contains("package:fake_project/models/user.dart"));
+      expect(imports.first, contains('package:fake_project/models/user.dart'));
     });
 
     test('adds import for parameter type', () {
@@ -67,10 +67,9 @@ void main() {
         className: 'UserService',
         returnType: 'void',
         parameters: [
-          MethodParameter(
+          const MethodParameter(
             name: 'user',
             type: 'User',
-            isNamed: false,
           )
         ],
         isAsync: false,
@@ -82,7 +81,7 @@ void main() {
 
       resolver.collectImports(method, sourceFilePath, imports);
 
-      expect(imports.first, contains("package:fake_project/models/user.dart"));
+      expect(imports.first, contains('package:fake_project/models/user.dart'));
     });
 
     test('adds import for enum parameter', () {
@@ -91,10 +90,9 @@ void main() {
         className: 'UserService',
         returnType: 'void',
         parameters: [
-          MethodParameter(
+          const MethodParameter(
             name: 'status',
             type: 'Status',
-            isNamed: false,
           )
         ],
         isAsync: false,
@@ -107,7 +105,7 @@ void main() {
       resolver.collectImports(method, sourceFilePath, imports);
 
       expect(
-          imports.first, contains("package:fake_project/models/status.dart"));
+          imports.first, contains('package:fake_project/models/status.dart'));
     });
 
     test('does not import primitive types', () {
@@ -143,7 +141,7 @@ void main() {
 
       resolver.collectImports(method, sourceFilePath, imports);
 
-      expect(imports.first, contains("package:fake_project/models/user.dart"));
+      expect(imports.first, contains('package:fake_project/models/user.dart'));
     });
   });
 }

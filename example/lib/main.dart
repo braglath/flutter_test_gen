@@ -9,11 +9,9 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: CounterPage(),
-    );
-  }
+  Widget build(BuildContext context) => const MaterialApp(
+        home: CounterPage(),
+      );
 }
 
 class CounterPage extends StatefulWidget {
@@ -41,49 +39,47 @@ class _CounterPageState extends State<CounterPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Counter App'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Counter Value',
-              style: TextStyle(fontSize: 20),
-            ),
-            Text(
-              '${viewModel.counter}',
-              style: const TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  onPressed: viewModel.decrement,
-                  child: const Text('-'),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: viewModel.reset,
-                  child: const Text('Reset'),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: viewModel.increment,
-                  child: const Text('+'),
-                ),
-              ],
-            ),
-          ],
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Counter App'),
         ),
-      ),
-    );
-  }
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Counter Value',
+                style: TextStyle(fontSize: 20),
+              ),
+              Text(
+                '${viewModel.counter}',
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton(
+                    onPressed: viewModel.decrement,
+                    child: const Text('-'),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: viewModel.reset,
+                    child: const Text('Reset'),
+                  ),
+                  const SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: viewModel.increment,
+                    child: const Text('+'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
 }

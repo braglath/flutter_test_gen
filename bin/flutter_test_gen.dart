@@ -2,9 +2,9 @@ import 'package:flutter_test_gen/src/utils/cli_utils.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty ||
-      args.contains("--help") ||
-      args.contains("-h") ||
-      args.first == "help") {
+      args.contains('--help') ||
+      args.contains('-h') ||
+      args.first == 'help') {
     CliUtils.printHelp();
     return;
   }
@@ -12,7 +12,7 @@ void main(List<String> args) async {
   final command = args.first;
 
   switch (command) {
-    case "generate":
+    case 'generate':
       await CliUtils.runGenerate(args.skip(1).toList());
       break;
 

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import '../models/method_info.dart';
-import '../utils/project_utils.dart';
+import 'package:flutter_test_gen/src/models/method_info.dart';
+import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 class ImportResolver {
   final ProjectUtil project;
@@ -76,7 +76,7 @@ class ImportResolver {
       if (pattern.hasMatch(content)) {
         final relativePath = entity.path.split('lib/').last;
 
-        return "package:${project.projectName}/$relativePath";
+        return 'package:${project.projectName}/$relativePath';
       }
     }
 

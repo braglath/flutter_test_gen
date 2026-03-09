@@ -30,9 +30,9 @@ void main() {
         dependencies: dependencies,
       );
 
-      expect(result, contains("late UserService service"));
-      expect(result, contains("MockUserRepository"));
-      expect(result, contains("service = UserService(mockUserRepository)"));
+      expect(result, contains('late UserService service'));
+      expect(result, contains('MockUserRepository'));
+      expect(result, contains('service = UserService(mockUserRepository)'));
     });
 
     test('generates group with no dependencies', () {
@@ -44,7 +44,7 @@ void main() {
         dependencies: [],
       );
 
-      expect(result, contains("service = UserService();"));
+      expect(result, contains('service = UserService();'));
     });
   });
 
@@ -52,75 +52,75 @@ void main() {
     test('generates sync test with return value', () {
       final result = TestTemplates.test(
         name: 'getUser',
-        arrange: "",
-        call: "service.getUser()",
-        expectedValue: "1",
-        verifyCall: "",
+        arrange: '',
+        call: 'service.getUser()',
+        expectedValue: '1',
+        verifyCall: '',
         isAsync: false,
         isVoid: false,
       );
 
       expect(result, contains("test('getUser'"));
-      expect(result, contains("final result = service.getUser()"));
-      expect(result, contains("expect(result, 1)"));
+      expect(result, contains('final result = service.getUser()'));
+      expect(result, contains('expect(result, 1)'));
     });
 
     test('generates async test', () {
       final result = TestTemplates.test(
         name: 'getUser',
-        arrange: "",
-        call: "service.getUser()",
-        expectedValue: "1",
-        verifyCall: "",
+        arrange: '',
+        call: 'service.getUser()',
+        expectedValue: '1',
+        verifyCall: '',
         isAsync: true,
         isVoid: false,
       );
 
-      expect(result, contains("async"));
-      expect(result, contains("await service.getUser()"));
+      expect(result, contains('async'));
+      expect(result, contains('await service.getUser()'));
     });
 
     test('generates void test', () {
       final result = TestTemplates.test(
         name: 'deleteUser',
-        arrange: "",
-        call: "service.deleteUser()",
-        expectedValue: "",
-        verifyCall: "",
+        arrange: '',
+        call: 'service.deleteUser()',
+        expectedValue: '',
+        verifyCall: '',
         isAsync: false,
         isVoid: true,
       );
 
-      expect(result, contains("service.deleteUser()"));
-      expect(result, contains("// TODO: verify side effects"));
+      expect(result, contains('service.deleteUser()'));
+      expect(result, contains('// TODO: verify side effects'));
     });
   });
 
   group('TestTemplates.file', () {
     test('generates file with mocks', () {
       final result = TestTemplates.file(
-        importPath: "package:app/user_service.dart",
-        imports: "",
-        mocks: "class MockRepo extends Mock {}",
-        mockVariables: "late MockRepo mockRepo;",
+        importPath: 'package:app/user_service.dart',
+        imports: '',
+        mocks: 'class MockRepo extends Mock {}',
+        mockVariables: 'late MockRepo mockRepo;',
         groups: "group('test', () {});",
       );
 
-      expect(result, contains("mocktail"));
+      expect(result, contains('mocktail'));
       expect(result, contains("import 'package:app/user_service.dart'"));
-      expect(result, contains("class MockRepo"));
+      expect(result, contains('class MockRepo'));
     });
 
     test('generates file without mocks', () {
       final result = TestTemplates.file(
-        importPath: "package:app/user_service.dart",
-        imports: "",
-        mocks: "",
-        mockVariables: "",
-        groups: "",
+        importPath: 'package:app/user_service.dart',
+        imports: '',
+        mocks: '',
+        mockVariables: '',
+        groups: '',
       );
 
-      expect(result.contains("mocktail"), false);
+      expect(result.contains('mocktail'), false);
     });
   });
 }

@@ -1,7 +1,5 @@
 class CounterRepository {
-  int getCount() {
-    return 1;
-  }
+  int getCount() => 1;
 }
 
 class CounterViewModel {
@@ -9,7 +7,5 @@ class CounterViewModel {
 
   CounterViewModel(this.repository);
 
-  int getCount() {
-    return repository.getCount();
-  }
+  int getCount() => repository.getCount();
 }

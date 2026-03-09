@@ -1,4 +1,4 @@
-import 'dependency_resolver.dart';
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 
 class MockGenerator {
   static String generateMockClasses(List<Dependency> deps) {

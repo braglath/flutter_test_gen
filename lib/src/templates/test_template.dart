@@ -1,4 +1,4 @@
-import '../di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 
 class TestTemplates {
   static String group({
@@ -17,17 +17,17 @@ $tests
     }
 
     final mockInitializers = dependencies.map((d) {
-      final mockVar = "mock${d.type[0].toUpperCase()}${d.type.substring(1)}";
-      return "      $mockVar = Mock${d.type}();";
-    }).join("\n");
+      final mockVar = 'mock${d.type[0].toUpperCase()}${d.type.substring(1)}';
+      return '      $mockVar = Mock${d.type}();';
+    }).join('\n');
 
-    final constructorArgs = dependencies.map((d) {
-      return "mock${d.type[0].toUpperCase()}${d.type.substring(1)}";
-    }).join(", ");
+    final constructorArgs = dependencies
+        .map((d) => 'mock${d.type[0].toUpperCase()}${d.type.substring(1)}')
+        .join(', ');
 
     final serviceInit = dependencies.isEmpty
-        ? "      service = $className();"
-        : "      service = $className($constructorArgs);";
+        ? '      service = $className();'
+        : '      service = $className($constructorArgs);';
 
     return """
   group('$groupName', () {
@@ -53,16 +53,16 @@ $tests
     required bool isAsync,
     required bool isVoid,
   }) {
-    final asyncKeyword = isAsync ? "async" : "";
-    final awaitKeyword = isAsync ? "await " : "";
+    final asyncKeyword = isAsync ? 'async' : '';
+    final awaitKeyword = isAsync ? 'await ' : '';
 
     final actLine = isVoid
-        ? "      $awaitKeyword$call;"
-        : "      final result = $awaitKeyword$call;";
+        ? '      $awaitKeyword$call;'
+        : '      final result = $awaitKeyword$call;';
 
     final assertLogic = isVoid
-        ? "      // TODO: verify side effects"
-        : "      expect(result, $expectedValue);";
+        ? '      // TODO: verify side effects'
+        : '      expect(result, $expectedValue);';
 
     return """
     test('$name', () $asyncKeyword {
@@ -86,7 +86,7 @@ $verifyCall
     required String groups,
   }) {
     final mocktailImport = mocks.trim().isEmpty
-        ? ""
+        ? ''
         : "import 'package:mocktail/mocktail.dart';\n";
 
     return """

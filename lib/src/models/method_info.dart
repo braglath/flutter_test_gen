@@ -1,6 +1,6 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 
-import 'method_parameter.dart';
+import 'package:flutter_test_gen/src/models/method_parameter.dart';
 
 class MethodInfo {
   final String className;
@@ -27,7 +27,6 @@ class MethodInfo {
   bool get isVoid => returnType.contains('void') || returnType == 'dynamic';
 
   @override
-  String toString() {
-    return 'MethodInfo{className=$className, methodName=$methodName, returnType=$returnType, isAsync=$isAsync, isStatic=$isStatic, parameters=$parameters, isTopLevel=$isTopLevel, hasParameters=$hasParameters, isVoid=$isVoid}';
-  }
+  String toString() =>
+      'MethodInfo{className=$className, methodName=$methodName, returnType=$returnType, isAsync=$isAsync, isStatic=$isStatic, parameters=$parameters, isTopLevel=$isTopLevel, hasParameters=$hasParameters, isVoid=$isVoid}';
 }

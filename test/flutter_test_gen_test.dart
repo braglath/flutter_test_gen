@@ -11,31 +11,31 @@ void main() {
     });
 
     test('shows help when --help provided', () async {
-      cli.main(["--help"]);
+      cli.main(['--help']);
 
       expect(true, true);
     });
 
     test('shows help when -h provided', () async {
-      cli.main(["-h"]);
+      cli.main(['-h']);
 
       expect(true, true);
     });
 
     test('shows help when help command provided', () async {
-      cli.main(["help"]);
+      cli.main(['help']);
 
       expect(true, true);
     });
 
     test('calls generate command', () async {
-      cli.main(["generate", "user_service"]);
+      cli.main(['generate', 'user_service']);
 
       expect(true, true);
     });
 
     test('backward compatibility generate', () async {
-      cli.main(["user_service"]);
+      cli.main(['user_service']);
 
       expect(true, true);
     });
