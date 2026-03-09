@@ -1,7 +1,7 @@
 # Flutter test generator (Flutter Test Gen)
 
 [![pub
-package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen) [![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score)
+package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen) [![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score) [![codecov](https://codecov.io/gh/YOUR_USERNAME/flutter_test_gen/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/flutter_test_gen)
 
 A CLI tool to **automatically generate unit tests for Flutter and Dart
 projects**.
