@@ -66,17 +66,6 @@ jobs:
       - name: Run tests with coverage
         run: flutter test --coverage
 
-      - name: Install coverage tools
-        run: flutter pub global activate coverage
-
-      - name: Convert coverage
-        run: |
-          format_coverage \
-            --lcov \
-            --in=coverage \
-            --out=coverage/lcov.info \
-            --report-on=lib
-
       - name: Check coverage threshold
         id: coverage
         run: |
@@ -107,6 +96,7 @@ jobs:
           files: coverage/lcov.info
 
       - name: Comment PR with summary
+        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           header: coverage-report
