@@ -2,6 +2,7 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
+import '../di/dependency_resolver.dart';
 import '../models/method_info.dart';
 import '../models/method_parameter.dart';
 
@@ -31,9 +32,12 @@ class DartParser {
 
   List<MethodInfo> _processDeclaration(CompilationUnitMember declaration) {
     if (declaration is ClassDeclaration) {
+      final dependencies = DependencyResolver.resolve(declaration);
+
       return _extractMembers(
         containerName: declaration.name.lexeme,
         members: declaration.members,
+        dependencies: dependencies,
       );
     }
 
@@ -41,6 +45,7 @@ class DartParser {
       return _extractMembers(
         containerName: declaration.name.lexeme,
         members: declaration.members,
+        dependencies: [],
       );
     }
 
@@ -48,6 +53,7 @@ class DartParser {
       return _extractMembers(
         containerName: declaration.name?.lexeme ?? 'Extension',
         members: declaration.members,
+        dependencies: [],
       );
     }
 
@@ -61,6 +67,7 @@ class DartParser {
   List<MethodInfo> _extractMembers({
     required String containerName,
     required List<ClassMember> members,
+    required List<Dependency> dependencies,
   }) {
     final methods = <MethodInfo>[];
 
@@ -68,7 +75,13 @@ class DartParser {
       if (member is MethodDeclaration) {
         if (member.isGetter || member.isSetter) continue;
 
-        methods.add(_parseMethod(member, containerName));
+        methods.add(
+          _parseMethod(
+            member,
+            containerName,
+            dependencies,
+          ),
+        );
       }
     }
 
@@ -82,10 +95,17 @@ class DartParser {
         returnType: declaration.returnType?.toSource() ?? 'dynamic',
         isAsync: declaration.functionExpression.body.isAsynchronous,
         isStatic: true,
-        parameters: _parseParameters(declaration.functionExpression.parameters),
+        parameters: _parseParameters(
+          declaration.functionExpression.parameters,
+        ),
+        dependencies: [],
       );
 
-  MethodInfo _parseMethod(MethodDeclaration member, String className) =>
+  MethodInfo _parseMethod(
+    MethodDeclaration member,
+    String className,
+    List<Dependency> dependencies,
+  ) =>
       MethodInfo(
         className: className,
         methodName: member.name.lexeme,
@@ -93,6 +113,7 @@ class DartParser {
         isAsync: member.body.isAsynchronous,
         isStatic: member.isStatic,
         parameters: _parseParameters(member.parameters),
+        dependencies: dependencies,
       );
 
   List<MethodParameter> _parseParameters(FormalParameterList? parameterList) {

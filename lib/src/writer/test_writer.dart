@@ -128,10 +128,22 @@ class TestWriter {
             ? "${method.className}.${method.methodName}($params)"
             : "service.${method.methodName}($params)";
 
+    final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+
+    final verifyCall = method.dependencies.isEmpty
+        ? ""
+        : method.dependencies.map((dep) {
+            final mockVar =
+                "mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}";
+            return "      verify(() => $mockVar.${method.methodName}()).called(1);";
+          }).join("\n");
+
     return TestTemplates.test(
       name: method.methodName,
       arrange: arrange,
       call: call,
+      expectedValue: expectedValue,
+      verifyCall: verifyCall,
       isAsync: method.isAsync,
       isVoid: method.isVoid,
     );

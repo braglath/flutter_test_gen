@@ -1,3 +1,6 @@
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/di/mock_generator.dart';
+
 import '../models/method_info.dart';
 import '../models/method_parameter.dart';
 import '../resolver/import_resolver.dart';
@@ -23,10 +26,18 @@ class TestBuilder {
   ) {
     final grouped = <String, List<MethodInfo>>{};
 
+    final dependencies = <Dependency>{};
+
     for (final method in methods) {
       if (_shouldSkip(method)) continue;
 
       resolver.collectImports(method, sourceFilePath, _imports);
+
+      for (final dep in method.dependencies) {
+        if (!dependencies.any((d) => d.type == dep.type)) {
+          dependencies.add(dep);
+        }
+      }
 
       grouped.putIfAbsent(method.className, () => []);
       grouped[method.className]!.add(method);
@@ -47,6 +58,9 @@ class TestBuilder {
 
       if (tests.isEmpty) return;
 
+      List<Dependency> dependencies =
+          className == "__top_level__" ? [] : methodList.first.dependencies;
+
       groups.write(
         TestTemplates.group(
           groupName: className == "__top_level__"
@@ -55,19 +69,28 @@ class TestBuilder {
           className: className,
           tests: tests.toString(),
           isTopLevel: className == "__top_level__",
+          dependencies: dependencies,
         ),
       );
     });
 
+    final mockClasses =
+        MockGenerator.generateMockClasses(dependencies.toList());
+
+    final mockVariables =
+        MockGenerator.generateMockVariables(dependencies.toList());
+
     return TestTemplates.file(
       importPath: importPath,
       imports: _imports.join('\n'),
+      mocks: mockClasses,
+      mockVariables: mockVariables,
       groups: groups.toString(),
     );
   }
 
   String _generateSingleTest(MethodInfo method) {
-    final arrange = _generateArrange(method.parameters);
+    final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
 
     final call = method.isTopLevel
@@ -76,24 +99,53 @@ class TestBuilder {
             ? "${method.className}.${method.methodName}($params)"
             : "service.${method.methodName}($params)";
 
+    final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+
+    final verifyCall = method.dependencies.isEmpty
+        ? ""
+        : method.dependencies.map((dep) {
+            final mockVar =
+                "mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}";
+            return "      verify(() => $mockVar.${method.methodName}()).called(1);";
+          }).join("\n");
+
     return TestTemplates.test(
       name: method.methodName,
       arrange: arrange,
       call: call,
+      expectedValue: expectedValue,
+      verifyCall: verifyCall,
       isAsync: method.isAsync,
       isVoid: method.isVoid,
     );
   }
 
-  String _generateArrange(List<MethodParameter> params) {
-    if (params.isEmpty) return "";
-
+  String _generateArrange(MethodInfo method) {
     final buffer = StringBuffer();
 
+    final params = method.parameters;
+
+    // Generate parameter values
     for (final param in params) {
       buffer.writeln(
         "      final ${param.name} = ${ProjectUtil().generateValue(param)};",
       );
+    }
+
+    // Generate mock stubs
+    for (final dep in method.dependencies) {
+      if (dep.type == method.className) continue;
+
+      final mockVar =
+          "mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}";
+
+      final stub = ProjectUtil().mockReturnValue(method.returnType);
+
+      if (method.returnType != 'void') {
+        buffer.writeln(
+          "      when(() => $mockVar.${method.methodName}()).$stub;",
+        );
+      }
     }
 
     return buffer.toString();

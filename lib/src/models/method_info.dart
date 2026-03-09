@@ -1,3 +1,5 @@
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+
 import 'method_parameter.dart';
 
 class MethodInfo {
@@ -7,6 +9,7 @@ class MethodInfo {
   final bool isAsync;
   final bool isStatic;
   final List<MethodParameter> parameters;
+  final List<Dependency> dependencies;
 
   MethodInfo(
       {required this.className,
@@ -14,7 +17,8 @@ class MethodInfo {
       required this.returnType,
       required this.isAsync,
       required this.isStatic,
-      required this.parameters});
+      required this.parameters,
+      required this.dependencies});
 
   bool get isTopLevel => className == '__top_level__';
 

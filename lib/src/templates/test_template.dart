@@ -1,9 +1,12 @@
+import '../di/dependency_resolver.dart';
+
 class TestTemplates {
   static String group({
     required String groupName,
     required String className,
     required String tests,
     required bool isTopLevel,
+    required List<Dependency> dependencies,
   }) {
     if (isTopLevel) {
       return """
@@ -13,13 +16,27 @@ $tests
 """;
     }
 
+    final mockInitializers = dependencies.map((d) {
+      final mockVar = "mock${d.type[0].toUpperCase()}${d.type.substring(1)}";
+      return "      $mockVar = Mock${d.type}();";
+    }).join("\n");
+
+    final constructorArgs = dependencies.map((d) {
+      return "mock${d.type[0].toUpperCase()}${d.type.substring(1)}";
+    }).join(", ");
+
+    final serviceInit = dependencies.isEmpty
+        ? "      service = $className();"
+        : "      service = $className($constructorArgs);";
+
     return """
   group('$groupName', () {
 
     late $className service;
 
     setUp(() {
-      service = $className();
+$mockInitializers
+$serviceInit
     });
 
 $tests
@@ -31,25 +48,32 @@ $tests
     required String name,
     required String arrange,
     required String call,
+    required String expectedValue,
+    required String verifyCall,
     required bool isAsync,
     required bool isVoid,
   }) {
     final asyncKeyword = isAsync ? "async" : "";
     final awaitKeyword = isAsync ? "await " : "";
-    final assertLogic = isVoid
-        ? "//TODO: implement your assert logic"
-        : "expect(result, isNotNull);";
 
-    // (name: $name, arrange: $arrange, call: $call, isAsync: $isAsync ,isVoid: $isVoid)
+    final actLine = isVoid
+        ? "      $awaitKeyword$call;"
+        : "      final result = $awaitKeyword$call;";
+
+    final assertLogic = isVoid
+        ? "      // TODO: verify side effects"
+        : "      expect(result, $expectedValue);";
+
     return """
     test('$name', () $asyncKeyword {
       // Arrange
 $arrange
       // Act
-      final result = $awaitKeyword$call;
+$actLine
 
       // Assert
-      $assertLogic
+$assertLogic
+$verifyCall
     });
 """;
   }
@@ -57,14 +81,25 @@ $arrange
   static String file({
     required String importPath,
     required String imports,
+    required String mocks,
+    required String mockVariables,
     required String groups,
   }) {
+    final mocktailImport = mocks.trim().isEmpty
+        ? ""
+        : "import 'package:mocktail/mocktail.dart';\n";
+
     return """
 import 'package:flutter_test/flutter_test.dart';
-import '$importPath';
+${mocktailImport}import '$importPath';
 $imports
 
+$mocks
+
 void main() {
+
+$mockVariables
+
 $groups
 }
 """;

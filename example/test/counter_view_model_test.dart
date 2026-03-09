@@ -14,28 +14,38 @@ void main() {
       // Arrange
 
       // Act
-      final result = service.increment();
+      service.increment();
 
       // Assert
-      //TODO: implement your assert logic
+      // TODO: verify side effects
     });
     test('decrement', () {
       // Arrange
 
       // Act
-      final result = service.decrement();
+      service.decrement();
 
       // Assert
-      //TODO: implement your assert logic
+      // TODO: verify side effects
     });
     test('reset', () {
       // Arrange
 
       // Act
-      final result = service.reset();
+      service.reset();
 
       // Assert
-      //TODO: implement your assert logic
+      // TODO: verify side effects
+    });
+    test('updateGender', () {
+      // Arrange
+      final userGender = UserGender.values.first;
+
+      // Act
+      service.updateGender(userGender);
+
+      // Assert
+      // TODO: verify side effects
     });
 
     test('addAge', () {
@@ -47,18 +57,7 @@ void main() {
       final result = service.addAge(a, b);
 
       // Assert
-      expect(result, isNotNull);
-    });
-
-    test('updateGender', () {
-      // Arrange
-      final userGender = UserGender.values.first;
-
-      // Act
-      final result = service.updateGender(userGender);
-
-      // Assert
-      //TODO: implement your assert logic
+      expect(result, 1);
     });
   });
 }

@@ -4,14 +4,9 @@ import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:yaml/yaml.dart';
 
 class ProjectUtil {
-  ProjectUtil._internal();
-  static final ProjectUtil _instance = ProjectUtil._internal();
-  factory ProjectUtil() => _instance;
-
   late final String _projectRoot;
   late final String _projectName;
 
-  /// Initialize once with any file path inside the project
   void initialize(String filePath) {
     _projectRoot = _findProjectRoot(filePath);
     _projectName = _loadProjectName();
@@ -109,5 +104,54 @@ class ProjectUtil {
 
   String defaultEnumValue(String enumName) {
     return 'values.first';
+  }
+
+  String mockName(String type) {
+    return "mock$type";
+  }
+
+  static bool isPrimitive(String type) {
+    return const [
+      'String',
+      'int',
+      'double',
+      'bool',
+      'num',
+      'DateTime',
+      'dynamic',
+    ].contains(type);
+  }
+
+  String mockReturnValue(String returnType) {
+    if (returnType.startsWith("Future<")) {
+      final inner =
+          returnType.replaceFirst("Future<", "").replaceFirst(">", "");
+
+      final value = primitiveValue(inner);
+
+      return "thenAnswer((_) async => $value)";
+    }
+
+    return "thenReturn(${primitiveValue(returnType)})";
+  }
+
+  String primitiveValue(String type) {
+    if (type.startsWith("Future<")) {
+      final inner = type.replaceFirst("Future<", "").replaceFirst(">", "");
+      return primitiveValue(inner);
+    }
+
+    switch (type) {
+      case 'int':
+        return '1';
+      case 'double':
+        return '1.0';
+      case 'bool':
+        return 'true';
+      case 'String':
+        return "'test'";
+      default:
+        return 'null';
+    }
   }
 }
