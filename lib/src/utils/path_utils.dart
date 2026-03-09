@@ -11,9 +11,6 @@ class PathUtils {
     return absolutePath;
   }
 
-  static String testPath(String filePath) {
-    return filePath
-        .replaceFirst("lib", "test")
-        .replaceAll(".dart", "_test.dart");
-  }
+  static String testPath(String filePath) =>
+      filePath.replaceFirst('lib', 'test').replaceAll('.dart', '_test.dart');
 }

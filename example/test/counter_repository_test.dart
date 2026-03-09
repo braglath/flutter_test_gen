@@ -1,26 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mocktail/mocktail.dart';
 import 'package:flutter_test_gen_example/counter_repository.dart';
-
+import 'package:mocktail/mocktail.dart';
 
 class MockCounterRepository extends Mock implements CounterRepository {}
 
-
 void main() {
-
-late MockCounterRepository mockCounterRepository;
-
+  late MockCounterRepository mockCounterRepository;
 
   group('CounterRepository | lib/counter_repository.dart', () {
-
     late CounterRepository service;
 
     setUp(() {
-
       service = CounterRepository();
     });
 
-    test('getCount', ()  {
+    test('getCount', () {
       // Arrange
 
       // Act
@@ -28,12 +22,9 @@ late MockCounterRepository mockCounterRepository;
 
       // Assert
       expect(result, 1);
-
     });
-
   });
   group('CounterViewModel | lib/counter_repository.dart', () {
-
     late CounterViewModel service;
 
     setUp(() {
@@ -41,7 +32,7 @@ late MockCounterRepository mockCounterRepository;
       service = CounterViewModel(mockCounterRepository);
     });
 
-    test('getCount', ()  {
+    test('getCount', () {
       // Arrange
       when(() => mockCounterRepository.getCount()).thenReturn(1);
 
@@ -52,7 +43,5 @@ late MockCounterRepository mockCounterRepository;
       expect(result, 1);
       verify(() => mockCounterRepository.getCount()).called(1);
     });
-
   });
-
 }

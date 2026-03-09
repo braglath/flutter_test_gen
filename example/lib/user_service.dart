@@ -9,7 +9,7 @@ class UserService {
 
   // custom method with parameters
   UserModel getUser(UserModel model) =>
-      UserModel(name: "John", age: 30, isActive: true);
+      UserModel(name: 'John', age: 30, isActive: true);
 
   // named parameters
   UserModel updateUser(
@@ -39,5 +39,5 @@ mixin LoggerMixin {
 
 // extensions (should be ignored)
 extension StringExt on String {
-  int wordCount() => split(" ").length;
+  int wordCount() => split(' ').length;
 }

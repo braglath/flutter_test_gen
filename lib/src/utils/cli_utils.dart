@@ -8,21 +8,21 @@ class CliUtils {
 
   static Future<void> runGenerate(List<String> args) async {
     if (args.isEmpty) {
-      print(AnsiStyles.red("Please provide a file name."));
+      print(AnsiStyles.red('Please provide a file name.'));
       return;
     }
 
     final input = args.first;
     final fileName = CliUtils.normalizeFileName(input);
 
-    final append = args.contains("--append");
-    final overwrite = args.contains("--overwrite");
+    final append = args.contains('--append');
+    final overwrite = args.contains('--overwrite');
 
     final matches = CliUtils.findFiles(fileName);
 
     if (matches.isEmpty) {
       print(
-        AnsiStyles.red("❌ File not found inside lib/: $fileName"),
+        AnsiStyles.red('❌ File not found inside lib/: $fileName'),
       );
       exit(1);
     }
@@ -37,7 +37,7 @@ class CliUtils {
 
     print(
       AnsiStyles.cyan(
-        "\n🚀 Generating tests for ${relativePath(filePath)}\n",
+        '\n🚀 Generating tests for ${relativePath(filePath)}\n',
       ),
     );
 
@@ -52,7 +52,7 @@ class CliUtils {
 
   static void printHelp() {
     print(
-      AnsiStyles.green("""
+      AnsiStyles.green('''
 Flutter Test Generator
 
 Usage:
@@ -85,26 +85,26 @@ Examples:
 
   Append only missing tests
     dart run flutter_test_gen generate user_service --append
-"""),
+'''),
     );
   }
 
   static String _selectFile(List<String> matches) {
-    print(AnsiStyles.yellow("Multiple files found:\n"));
+    print(AnsiStyles.yellow('Multiple files found:\n'));
 
     for (int i = 0; i < matches.length; i++) {
       final relative = relativePath(matches[i]);
       print("${AnsiStyles.cyan("${i + 1}.")} $relative");
     }
 
-    stdout.write("\nSelect file: ");
+    stdout.write('\nSelect file: ');
 
     final input = stdin.readLineSync();
 
-    final index = int.tryParse(input ?? "");
+    final index = int.tryParse(input ?? '');
 
     if (index == null || index < 1 || index > matches.length) {
-      print(AnsiStyles.red("Invalid selection."));
+      print(AnsiStyles.red('Invalid selection.'));
       exit(1);
     }
 
@@ -122,24 +122,24 @@ Examples:
   }
 
   static String normalizeFileName(String input) {
-    if (input.endsWith(".dart")) {
+    if (input.endsWith('.dart')) {
       return input;
     }
 
-    return "$input.dart";
+    return '$input.dart';
   }
 
   static List<String> findFiles(String fileName) {
     final root = Directory.current;
     // final root = Directory("lib");
 
-    List<String> matches = [];
+    final List<String> matches = [];
 
     for (var entity in root.listSync(recursive: true)) {
       if (entity is File &&
           entity.path.endsWith(fileName) &&
           entity.path.contains(
-            "${Platform.pathSeparator}lib${Platform.pathSeparator}",
+            '${Platform.pathSeparator}lib${Platform.pathSeparator}',
           )) {
         matches.add(entity.path);
       }

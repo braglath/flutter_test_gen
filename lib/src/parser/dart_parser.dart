@@ -2,9 +2,9 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
-import '../di/dependency_resolver.dart';
-import '../models/method_info.dart';
-import '../models/method_parameter.dart';
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/models/method_info.dart';
+import 'package:flutter_test_gen/src/models/method_parameter.dart';
 
 class DartParser {
   DartParser._internal();

@@ -16,17 +16,15 @@ class MethodParameter {
     String? type,
     bool? isNamed,
     bool? isEnum,
-  }) {
-    return MethodParameter(
-      name: name ?? this.name,
-      type: type ?? this.type,
-      isNamed: isNamed ?? this.isNamed,
-      isEnum: isEnum ?? this.isEnum,
-    );
-  }
+  }) =>
+      MethodParameter(
+        name: name ?? this.name,
+        type: type ?? this.type,
+        isNamed: isNamed ?? this.isNamed,
+        isEnum: isEnum ?? this.isEnum,
+      );
 
   @override
-  String toString() {
-    return 'MethodParameter(name: $name, type: $type, isNamed: $isNamed, isEnum: $isEnum)';
-  }
+  String toString() =>
+      'MethodParameter(name: $name, type: $type, isNamed: $isNamed, isEnum: $isEnum)';
 }

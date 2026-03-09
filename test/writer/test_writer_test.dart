@@ -23,55 +23,55 @@ void main() {
 
       final result = writer.process(
         file: file,
-        existing: "",
-        content: "new content",
+        existing: '',
+        content: 'new content',
         methods: [],
-        relativePath: "lib/service.dart",
+        relativePath: 'lib/service.dart',
         append: true,
         overwrite: false,
         imports: [],
       );
 
-      expect(result, "new content");
+      expect(result, 'new content');
     });
 
     test('returns content when existing content is empty', () {
       final result = writer.process(
         file: tempFile,
-        existing: "",
-        content: "new test file",
+        existing: '',
+        content: 'new test file',
         methods: [],
-        relativePath: "lib/service.dart",
+        relativePath: 'lib/service.dart',
         append: true,
         overwrite: false,
         imports: [],
       );
 
-      expect(result, "new test file");
+      expect(result, 'new test file');
     });
 
     test('overwrite mode replaces existing file', () {
       final result = writer.process(
         file: tempFile,
-        existing: "old content",
-        content: "new content",
+        existing: 'old content',
+        content: 'new content',
         methods: [],
-        relativePath: "lib/service.dart",
+        relativePath: 'lib/service.dart',
         append: true,
         overwrite: true,
         imports: [],
       );
 
-      expect(result, "new content");
+      expect(result, 'new content');
     });
 
     test('returns null when append disabled', () {
       final result = writer.process(
         file: tempFile,
-        existing: "existing",
-        content: "new",
+        existing: 'existing',
+        content: 'new',
         methods: [],
-        relativePath: "lib/service.dart",
+        relativePath: 'lib/service.dart',
         append: false,
         overwrite: false,
         imports: [],
@@ -83,10 +83,10 @@ void main() {
     test('skips private methods', () {
       final methods = [
         MethodInfo(
-          methodName: "_privateMethod",
-          className: "UserService",
+          methodName: '_privateMethod',
+          className: 'UserService',
           parameters: [],
-          returnType: "int",
+          returnType: 'int',
           isAsync: false,
           isStatic: false,
           dependencies: [],
@@ -95,45 +95,45 @@ void main() {
 
       final result = writer.process(
         file: tempFile,
-        existing: """
+        existing: '''
 void main() {
 }
-""",
-        content: "generated",
+''',
+        content: 'generated',
         methods: methods,
-        relativePath: "lib/user_service.dart",
+        relativePath: 'lib/user_service.dart',
         append: true,
         overwrite: false,
         imports: [],
       );
 
-      expect(result, contains("void main()"));
+      expect(result, contains('void main()'));
     });
 
     test('creates new group when group does not exist', () {
       final methods = [
         MethodInfo(
-          methodName: "getUser",
-          className: "UserService",
+          methodName: 'getUser',
+          className: 'UserService',
           parameters: [],
-          returnType: "int",
+          returnType: 'int',
           isAsync: false,
           isStatic: false,
           dependencies: [],
         ),
       ];
 
-      final existing = """
+      final existing = '''
 void main() {
 }
-""";
+''';
 
       final result = writer.process(
         file: tempFile,
         existing: existing,
-        content: "generated",
+        content: 'generated',
         methods: methods,
-        relativePath: "lib/user_service.dart",
+        relativePath: 'lib/user_service.dart',
         append: true,
         overwrite: false,
         imports: [],
@@ -146,10 +146,10 @@ void main() {
     test('skips test if it already exists', () {
       final methods = [
         MethodInfo(
-          methodName: "getUser",
-          className: "UserService",
+          methodName: 'getUser',
+          className: 'UserService',
           parameters: [],
-          returnType: "int",
+          returnType: 'int',
           isAsync: false,
           isStatic: false,
           dependencies: [],
@@ -165,9 +165,9 @@ void main() {
       final result = writer.process(
         file: tempFile,
         existing: existing,
-        content: "generated",
+        content: 'generated',
         methods: methods,
-        relativePath: "lib/user_service.dart",
+        relativePath: 'lib/user_service.dart',
         append: true,
         overwrite: false,
         imports: [],
@@ -179,29 +179,29 @@ void main() {
     test('restores missing imports', () {
       final methods = [
         MethodInfo(
-          methodName: "getUser",
-          className: "UserService",
+          methodName: 'getUser',
+          className: 'UserService',
           parameters: [],
-          returnType: "int",
+          returnType: 'int',
           isAsync: false,
           isStatic: false,
           dependencies: [],
         ),
       ];
 
-      final existing = """
+      final existing = '''
 void main() {
 }
-""";
+''';
 
       final imports = ["import 'package:flutter_test/flutter_test.dart';"];
 
       final result = writer.process(
         file: tempFile,
         existing: existing,
-        content: "generated",
+        content: 'generated',
         methods: methods,
-        relativePath: "lib/user_service.dart",
+        relativePath: 'lib/user_service.dart',
         append: true,
         overwrite: false,
         imports: imports,
@@ -213,39 +213,38 @@ void main() {
     test('generates arrange variables for parameters', () {
       final methods = [
         MethodInfo(
-          methodName: "createUser",
-          className: "UserService",
+          methodName: 'createUser',
+          className: 'UserService',
           parameters: [
-            MethodParameter(
-              name: "age",
-              type: "int",
-              isNamed: false,
+            const MethodParameter(
+              name: 'age',
+              type: 'int',
             )
           ],
-          returnType: "int",
+          returnType: 'int',
           isAsync: false,
           isStatic: false,
           dependencies: [],
         ),
       ];
 
-      final existing = """
+      final existing = '''
 void main() {
 }
-""";
+''';
 
       final result = writer.process(
         file: tempFile,
         existing: existing,
-        content: "generated",
+        content: 'generated',
         methods: methods,
-        relativePath: "lib/user_service.dart",
+        relativePath: 'lib/user_service.dart',
         append: true,
         overwrite: false,
         imports: [],
       );
 
-      expect(result, contains("final age = 1"));
+      expect(result, contains('final age = 1'));
     });
   });
 }

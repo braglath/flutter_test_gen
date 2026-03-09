@@ -1,11 +1,10 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/di/mock_generator.dart';
-
-import '../models/method_info.dart';
-import '../models/method_parameter.dart';
-import '../resolver/import_resolver.dart';
-import '../templates/test_template.dart';
-import '../utils/project_utils.dart';
+import 'package:flutter_test_gen/src/models/method_info.dart';
+import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/resolver/import_resolver.dart';
+import 'package:flutter_test_gen/src/templates/test_template.dart';
+import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 class TestBuilder {
   final ProjectUtil project;
@@ -58,17 +57,17 @@ class TestBuilder {
 
       if (tests.isEmpty) return;
 
-      List<Dependency> dependencies =
-          className == "__top_level__" ? [] : methodList.first.dependencies;
+      final List<Dependency> dependencies =
+          className == '__top_level__' ? [] : methodList.first.dependencies;
 
       groups.write(
         TestTemplates.group(
-          groupName: className == "__top_level__"
-              ? "Functions | $relativePath"
-              : "$className | $relativePath",
+          groupName: className == '__top_level__'
+              ? 'Functions | $relativePath'
+              : '$className | $relativePath',
           className: className,
           tests: tests.toString(),
-          isTopLevel: className == "__top_level__",
+          isTopLevel: className == '__top_level__',
           dependencies: dependencies,
         ),
       );
@@ -94,20 +93,20 @@ class TestBuilder {
     final params = _generateCallParams(method.parameters);
 
     final call = method.isTopLevel
-        ? "${method.methodName}($params)"
+        ? '${method.methodName}($params)'
         : method.isStatic
-            ? "${method.className}.${method.methodName}($params)"
-            : "service.${method.methodName}($params)";
+            ? '${method.className}.${method.methodName}($params)'
+            : 'service.${method.methodName}($params)';
 
     final expectedValue = ProjectUtil().primitiveValue(method.returnType);
 
     final verifyCall = method.dependencies.isEmpty
-        ? ""
+        ? ''
         : method.dependencies.map((dep) {
             final mockVar =
-                "mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}";
-            return "      verify(() => $mockVar.${method.methodName}()).called(1);";
-          }).join("\n");
+                'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
+            return '      verify(() => $mockVar.${method.methodName}()).called(1);';
+          }).join('\n');
 
     return TestTemplates.test(
       name: method.methodName,
@@ -128,7 +127,7 @@ class TestBuilder {
     // Generate parameter values
     for (final param in params) {
       buffer.writeln(
-        "      final ${param.name} = ${ProjectUtil().generateValue(param)};",
+        '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
       );
     }
 
@@ -137,13 +136,13 @@ class TestBuilder {
       if (dep.type == method.className) continue;
 
       final mockVar =
-          "mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}";
+          'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
 
       final stub = ProjectUtil().mockReturnValue(method.returnType);
 
       if (method.returnType != 'void') {
         buffer.writeln(
-          "      when(() => $mockVar.${method.methodName}()).$stub;",
+          '      when(() => $mockVar.${method.methodName}()).$stub;',
         );
       }
     }
@@ -151,17 +150,15 @@ class TestBuilder {
     return buffer.toString();
   }
 
-  String _generateCallParams(List<MethodParameter> params) {
-    return params.map((p) {
-      if (p.isNamed) return "${p.name}: ${p.name}";
-      return p.name;
-    }).join(", ");
-  }
+  String _generateCallParams(List<MethodParameter> params) => params.map((p) {
+        if (p.isNamed) return '${p.name}: ${p.name}';
+        return p.name;
+      }).join(', ');
 
   bool _shouldSkip(MethodInfo method) {
     if (method.methodName.startsWith('_')) return true;
-    if (method.className.endsWith("Mixin")) return true;
-    if (method.className.contains("Ext")) return true;
+    if (method.className.endsWith('Mixin')) return true;
+    if (method.className.contains('Ext')) return true;
     return false;
   }
 }
