@@ -90,6 +90,9 @@ jobs:
             exit 1
           fi
 
+      - name: Debug coverage file
+        run: head -50 coverage/lcov.info
+
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
