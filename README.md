@@ -1,7 +1,7 @@
 # Flutter test generator (Flutter Test Gen)
 
 [![pub
-package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen) [![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score) [![codecov](https://codecov.io/gh/YOUR_USERNAME/flutter_test_gen/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/flutter_test_gen)
+package](https://img.shields.io/pub/v/flutter_test_gen.svg)](https://pub.dev/packages/flutter_test_gen) [![likes](https://img.shields.io/pub/likes/flutter_test_gen)](https://pub.dev/packages/flutter_test_gen/score) [![codecov](https://codecov.io/gh/braglath/flutter_test_gen/branch/main/graph/badge.svg)](https://codecov.io/gh/braglath/flutter_test_gen)
 
 A CLI tool to **automatically generate unit tests for Flutter and Dart
 projects**.
@@ -35,6 +35,7 @@ Add the package to your project:
 ```yaml
 dev_dependencies:
   flutter_test_gen: ^0.0.1
+  mocktail: ^1.0.0 # only when you want to mock dependencies
 ```
 
 Then run:
@@ -216,7 +217,7 @@ MIT License
 
 ## Repository
 
-<https://github.com/YOUR_USERNAME/flutter_test_gen>
+<https://github.com/braglath/flutter_test_gen>
 
 ## Author
 

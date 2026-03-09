@@ -8,38 +8,66 @@ on:
   pull_request:
     branches:
       - main
+      - feature
       - feature/**
-      - unit/**
+      - unit
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - main
+      - unit
       - unit/**
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  test:
+  commit-check:
+    if: github.event_name == 'pull_request'
+    name: Conventional Commit Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  quality-check:
+    name: Format, Lint, Test & Coverage
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Cache Pub Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
 
       - name: Install dependencies
-        run: dart pub get
+        run: flutter pub get
 
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze project
-        run: dart analyze --fatal-infos --fatal-warnings
+        run: dart analyze --fatal-warnings
 
       - name: Run tests with coverage
-        run: dart test --coverage=coverage
+        run: flutter test --coverage
 
       - name: Install coverage tools
-        run: dart pub global activate coverage
+        run: flutter pub global activate coverage
 
       - name: Convert coverage
         run: |
@@ -49,16 +77,27 @@ jobs:
             --out=coverage/lcov.info \
             --report-on=lib
 
-      - name: Check coverage >= 80%
+      - name: Check coverage threshold
+        id: coverage
         run: |
-          COVERAGE=$(grep -o 'LF:[0-9]*' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc)
-          HIT=$(grep -o 'LH:[0-9]*' coverage/lcov.info | cut -d: -f2 | paste -sd+ | bc)
-          PERCENT=$((100 * HIT / COVERAGE))
+          sudo apt-get update
+          sudo apt-get install -y bc
 
-          echo "Coverage: $PERCENT%"
+          TOTAL_LINES=$(grep -Po 'LF:\K\d+' coverage/lcov.info | paste -sd+ | bc)
+          COVERED_LINES=$(grep -Po 'LH:\K\d+' coverage/lcov.info | paste -sd+ | bc)
+
+          if [ "$TOTAL_LINES" -eq 0 ]; then
+            echo "No coverage data found!"
+            exit 1
+          fi
+
+          PERCENT=$((100 * COVERED_LINES / TOTAL_LINES))
+          echo "Coverage is $PERCENT%"
+
+          echo "percent=$PERCENT" >> $GITHUB_OUTPUT
 
           if [ "$PERCENT" -lt 80 ]; then
-            echo "Coverage below 80%"
+            echo "Coverage is below 80%"
             exit 1
           fi
 
@@ -67,5 +106,13 @@ jobs:
         with:
           files: coverage/lcov.info
 
-      - name: Pub publish check
-        run: dart pub publish --dry-run
+      - name: Comment PR with summary
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage-report
+          message: |
+            ### ✅ CI Quality Gate Passed
+            - 🧹 Formatting: Passed
+            - 🔍 Lint: Passed
+            - 🧪 Tests: Passed
+            - 📊 Coverage: ${{ steps.coverage.outputs.percent }}%

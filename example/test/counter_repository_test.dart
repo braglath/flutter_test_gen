@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_test_gen_example/counter_repository.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:flutter_test_gen_example/counter_repository.dart';
 
 class MockCounterRepository extends Mock implements CounterRepository {}
 
 void main() {
   late MockCounterRepository mockCounterRepository;
 
-  group('CounterRepository | lib/counter_repository.dart', () {
+  group('CounterRepository | example/lib/counter_repository.dart', () {
     late CounterRepository service;
 
     setUp(() {
@@ -24,7 +24,7 @@ void main() {
       expect(result, 1);
     });
   });
-  group('CounterViewModel | lib/counter_repository.dart', () {
+  group('CounterViewModel | example/lib/counter_repository.dart', () {
     late CounterViewModel service;
 
     setUp(() {
