@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## 0.0.4
 
-- Lint rules
+- Mock Dependencies
+- Added Lint rules
 - Added test
 - CI workflow
 

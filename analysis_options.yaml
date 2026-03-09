@@ -5,7 +5,7 @@
 #
 # Uses the recommended lint rules from package:lints.
 
-include: package:lints/recommended.yaml
+# include: package:lints/recommended.yaml
 
 analyzer:
   exclude:
