@@ -47,9 +47,8 @@ void main() {
       // Assert
       // TODO: verify side effects
     });
-    
-  
-    test('addAge', ()  {
+
+    test('addAge', () {
       // Arrange
       final a = 1;
       final b = 1;
@@ -59,8 +58,6 @@ void main() {
 
       // Assert
       expect(result, 1);
-
     });
-
-});
+  });
 }

@@ -4,14 +4,9 @@ import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:yaml/yaml.dart';
 
 class ProjectUtil {
-  ProjectUtil._internal();
-  static final ProjectUtil _instance = ProjectUtil._internal();
-  factory ProjectUtil() => _instance;
-
   late final String _projectRoot;
   late final String _projectName;
 
-  /// Initialize once with any file path inside the project
   void initialize(String filePath) {
     _projectRoot = _findProjectRoot(filePath);
     _projectName = _loadProjectName();
