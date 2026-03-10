@@ -97,7 +97,7 @@ class DependencyResolver {
   }
 
   static String? _findFieldType(ClassDeclaration clazz, String fieldName) {
-    for (final entity in clazz.body.childEntities) {
+    for (final entity in clazz.members) {
       if (entity is! FieldDeclaration) continue;
 
       final type = entity.fields.type?.toSource();

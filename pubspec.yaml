@@ -25,7 +25,7 @@ topics:
   - code-generation
 
 dependencies:
-  analyzer: ^10.0.0
+  analyzer: ^7.0.0
   ansi_styles: ^0.3.2+1
   yaml: ^3.1.3
 
