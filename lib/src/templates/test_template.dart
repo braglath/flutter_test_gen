@@ -1,6 +1,32 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 
+/// Provides reusable template generators for building test code.
+///
+/// [TestTemplates] contains static helper methods used to generate
+/// different sections of a test file, including:
+/// - test groups
+/// - individual test cases
+/// - the complete test file structure
+///
+/// These templates are used by the test generator to produce
+/// consistent and readable unit tests.
 class TestTemplates {
+  /// Generates a `group()` block containing tests for a class or
+  /// top-level functions.
+  ///
+  /// Parameters:
+  /// - [groupName]: The name of the test group.
+  /// - [className]: The class being tested.
+  /// - [tests]: The generated test cases belonging to the group.
+  /// - [isTopLevel]: Indicates whether the tests are for top-level functions.
+  /// - [dependencies]: List of constructor dependencies used to create mocks.
+  ///
+  /// For class-based tests, this template:
+  /// - Creates a `service` instance of the class under test.
+  /// - Initializes mock dependencies in `setUp()`.
+  /// - Injects mocks into the constructor.
+  ///
+  /// For top-level functions, no service instance or mocks are generated.
   static String group({
     required String groupName,
     required String className,
@@ -44,6 +70,21 @@ $tests
 """;
   }
 
+  /// Generates a single `test()` block.
+  ///
+  /// Parameters:
+  /// - [name]: The name of the test.
+  /// - [arrange]: Generated setup code for method parameters.
+  /// - [call]: The method invocation expression.
+  /// - [expectedValue]: The expected value used in assertions.
+  /// - [verifyCall]: Optional verification code for mocked dependencies.
+  /// - [isAsync]: Indicates whether the method being tested is asynchronous.
+  /// - [isVoid]: Indicates whether the method returns `void`.
+  ///
+  /// The generated test follows the **Arrange–Act–Assert** pattern:
+  /// - Arrange: prepares inputs
+  /// - Act: executes the method
+  /// - Assert: verifies results or side effects
   static String test({
     required String name,
     required String arrange,
@@ -78,6 +119,21 @@ $verifyCall
 """;
   }
 
+  /// Generates the complete test file content.
+  ///
+  /// Parameters:
+  /// - [importPath]: Import path of the source file being tested.
+  /// - [imports]: Additional imports required by generated tests.
+  /// - [mocks]: Generated mock class definitions.
+  /// - [mockVariables]: Mock variable declarations.
+  /// - [groups]: All generated test groups.
+  ///
+  /// This method assembles the final test file including:
+  /// - required `flutter_test` import
+  /// - optional `mocktail` import (if mocks exist)
+  /// - source file import
+  /// - generated mocks
+  /// - test groups inside the `main()` function.
   static String file({
     required String importPath,
     required String imports,

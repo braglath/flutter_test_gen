@@ -7,13 +7,30 @@ import 'package:flutter_test_gen/src/utils/path_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/writer/test_writer.dart';
 
+/// A singleton service responsible for generating test files.
+///
+/// This class ensures only one instance of [TestGenerator] exists
+/// throughout the application. It is used to analyze source code
+/// and generate corresponding unit test templates.
 class TestGenerator {
   TestGenerator._internal();
 
   static final TestGenerator _instance = TestGenerator._internal();
 
+  /// Returns the single shared instance of [TestGenerator].
+  ///
+  /// This factory constructor guarantees that only one instance
+  /// of the generator is created and reused across the application.
   factory TestGenerator() => _instance;
 
+  /// Generates unit tests for the given source input.
+  ///
+  /// This method analyzes the provided source file, extracts
+  /// classes and methods, and creates corresponding test
+  /// templates automatically.
+  ///
+  /// Returns a [Future] that completes when the test generation
+  /// process finishes.
   Future<void> generate(
     String filePath, {
     bool append = true,

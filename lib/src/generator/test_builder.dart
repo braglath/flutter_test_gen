@@ -6,16 +6,57 @@ import 'package:flutter_test_gen/src/resolver/import_resolver.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
+/// Builds complete unit test files from extracted method metadata.
+///
+/// [TestBuilder] coordinates multiple components such as:
+/// - [ProjectUtil] for project-specific utilities
+/// - [ImportResolver] for resolving required imports
+/// - [MockGenerator] for creating mock classes for dependencies
+///
+/// It groups methods by class, generates test cases, and produces the
+/// final test file content including imports, mocks, and test groups.
 class TestBuilder {
+  /// Provides project-specific utilities such as value generation
+  /// and primitive type handling used during test creation.
   final ProjectUtil project;
+
+  /// Resolves and collects required imports for generated tests.
+  ///
+  /// This ensures that all types referenced in generated tests
+  /// are properly imported.
   final ImportResolver resolver;
 
   final Set<String> _imports = {};
 
+  /// Returns the list of imports collected during test generation.
+  ///
+  /// These imports are required for the generated test file
+  /// to compile correctly.
   List<String> get generatedImports => _imports.toList();
 
+  /// Creates a new [TestBuilder] instance for the given [project].
+  ///
+  /// The constructor initializes an [ImportResolver] which is used
+  /// to detect and collect necessary imports for generated tests.
   TestBuilder(this.project) : resolver = ImportResolver(project);
 
+  /// Generates the complete test file content for the provided [methods].
+  ///
+  /// Parameters:
+  /// - [methods]: List of detected methods extracted from the source file.
+  /// - [importPath]: Import path for the source file being tested.
+  /// - [relativePath]: Relative file path used for grouping tests.
+  /// - [existing]: Existing test file content (used to prevent duplicates).
+  /// - [sourceFilePath]: Absolute path of the source file being analyzed.
+  ///
+  /// Behavior:
+  /// - Groups methods by class.
+  /// - Skips private or unsupported methods.
+  /// - Collects required imports.
+  /// - Generates mocks for detected dependencies.
+  /// - Avoids generating duplicate tests if they already exist.
+  ///
+  /// Returns the generated test file content as a [String].
   String generate(
     List<MethodInfo> methods,
     String importPath,

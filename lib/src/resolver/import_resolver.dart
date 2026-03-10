@@ -3,13 +3,37 @@ import 'dart:io';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
+/// Resolves and collects required imports for generated test files.
+///
+/// [ImportResolver] analyzes method metadata and determines which
+/// imports are necessary for the generated tests to compile correctly.
+/// It ensures that all referenced types such as return types,
+/// parameter types, and dependency types are properly imported.
 class ImportResolver {
+  /// Provides project-specific utilities used for resolving imports
+  /// and identifying types within the project.
   final ProjectUtil project;
 
   final Map<String, String?> _cache = {};
 
+  /// Creates a new [ImportResolver] for the given [project].
+  ///
+  /// The [project] utility helps determine the correct import paths
+  /// for different types referenced during test generation.
   ImportResolver(this.project);
 
+  /// Collects required imports for the provided [method].
+  ///
+  /// This method analyzes the method's metadata and adds necessary
+  /// import statements to the [imports] set.
+  ///
+  /// Parameters:
+  /// - [method]: The method metadata used to determine referenced types.
+  /// - [sourceFilePath]: The path of the source file currently being processed.
+  /// - [imports]: A set that accumulates required import statements.
+  ///
+  /// Duplicate imports are automatically avoided because [imports]
+  /// is maintained as a `Set`.
   void collectImports(
     MethodInfo method,
     String sourceFilePath,

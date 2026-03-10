@@ -66,7 +66,7 @@ linter:
     use_super_parameters: true
 
     # -------- PACKAGE QUALITY (important for pub.dev) --------
-    public_member_api_docs: false
+    public_member_api_docs: true
     sort_pub_dependencies: true
 
     # -------- TEST FRIENDLY --------

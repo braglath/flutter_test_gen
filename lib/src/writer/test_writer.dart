@@ -5,7 +5,35 @@ import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
+/// Responsible for writing or updating generated test files.
+///
+/// [TestWriter] handles different generation modes such as:
+/// - creating a new test file
+/// - appending new tests to an existing file
+/// - overwriting an existing file
+///
+/// It also ensures duplicate tests are not generated and restores
+/// missing imports when updating test files.
 class TestWriter {
+  /// Processes test generation and returns the updated test content.
+  ///
+  /// Parameters:
+  /// - [file]: The test file to be written or updated.
+  /// - [existing]: The existing content of the test file.
+  /// - [content]: The newly generated test content.
+  /// - [methods]: List of detected methods used to generate tests.
+  /// - [relativePath]: Relative path of the source file used for grouping tests.
+  /// - [append]: If true, new tests will be appended to the existing file.
+  /// - [overwrite]: If true, the existing test file will be completely replaced.
+  /// - [imports]: List of imports required for the generated tests.
+  ///
+  /// Behavior:
+  /// - If the file does not exist, the generated [content] is returned.
+  /// - If [overwrite] is true, existing content is replaced.
+  /// - If [append] is true, missing tests are appended to existing groups.
+  /// - If neither append nor overwrite is enabled, no changes are made.
+  ///
+  /// Returns the updated test file content or `null` if no update is required.
   String? process({
     required File file,
     required String existing,

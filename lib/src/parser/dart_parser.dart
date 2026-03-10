@@ -1,18 +1,48 @@
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
 
+/// Parses Dart source files and extracts method metadata.
+///
+/// [DartParser] analyzes Dart files using the `analyzer` package and
+/// collects information about methods, functions, and their metadata.
+/// The extracted information is converted into [MethodInfo] objects,
+/// which are later used by the test generator to create unit tests.
+///
+/// This class is implemented as a **singleton** to avoid repeatedly
+/// creating parser instances during test generation.
 class DartParser {
   DartParser._internal();
 
   static final DartParser _instance = DartParser._internal();
 
+  /// Returns the shared singleton instance of [DartParser].
+  ///
+  /// This factory constructor ensures that only one parser instance
+  /// exists throughout the test generation process.
   factory DartParser() => _instance;
 
+  /// Extracts method information from the Dart file located at [filePath].
+  ///
+  /// The parser analyzes the file using the Dart analyzer and collects
+  /// methods from the following declarations:
+  /// - Classes
+  /// - Mixins
+  /// - Extensions
+  /// - Top-level functions
+  ///
+  /// Each discovered method is converted into a [MethodInfo] object
+  /// containing metadata such as:
+  /// - method name
+  /// - return type
+  /// - parameters
+  /// - dependencies
+  /// - async/static flags
+  ///
+  /// Returns a list of extracted [MethodInfo] objects.
   List<MethodInfo> extractMethods(String filePath) {
     final result = parseFile(
       path: filePath,
@@ -35,8 +65,9 @@ class DartParser {
       final dependencies = DependencyResolver.resolve(declaration);
 
       return _extractMembers(
-        containerName: declaration.name.lexeme,
-        members: declaration.members,
+        containerName: declaration.namePart.typeName.lexeme,
+        members:
+            declaration.body.childEntities.whereType<ClassMember>().toList(),
         dependencies: dependencies,
       );
     }
@@ -44,7 +75,7 @@ class DartParser {
     if (declaration is MixinDeclaration) {
       return _extractMembers(
         containerName: declaration.name.lexeme,
-        members: declaration.members,
+        members: declaration.body.members,
         dependencies: [],
       );
     }
@@ -52,7 +83,7 @@ class DartParser {
     if (declaration is ExtensionDeclaration) {
       return _extractMembers(
         containerName: declaration.name?.lexeme ?? 'Extension',
-        members: declaration.members,
+        members: declaration.body.members,
         dependencies: [],
       );
     }
