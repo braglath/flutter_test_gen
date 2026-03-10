@@ -75,7 +75,7 @@ class DartParser {
     if (declaration is MixinDeclaration) {
       return _extractMembers(
         containerName: declaration.name.lexeme,
-        members: declaration.body.members,
+        members: declaration.members,
         dependencies: [],
       );
     }
@@ -83,7 +83,7 @@ class DartParser {
     if (declaration is ExtensionDeclaration) {
       return _extractMembers(
         containerName: declaration.name?.lexeme ?? 'Extension',
-        members: declaration.body.members,
+        members: declaration.members,
         dependencies: [],
       );
     }
