@@ -65,9 +65,8 @@ class DartParser {
       final dependencies = DependencyResolver.resolve(declaration);
 
       return _extractMembers(
-        containerName: declaration.namePart.typeName.lexeme,
-        members:
-            declaration.body.childEntities.whereType<ClassMember>().toList(),
+        containerName: declaration.name.lexeme,
+        members: declaration.members,
         dependencies: dependencies,
       );
     }

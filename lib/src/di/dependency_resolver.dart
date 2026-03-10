@@ -38,7 +38,7 @@ class DependencyResolver {
   static List<Dependency> resolve(ClassDeclaration clazz) {
     final dependencies = <Dependency>[];
 
-    for (final entity in clazz.body.childEntities) {
+    for (final entity in clazz.members) {
       if (entity is! ConstructorDeclaration) continue;
 
       for (final param in entity.parameters.parameters) {
