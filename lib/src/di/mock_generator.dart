@@ -106,9 +106,8 @@ bool _isPrimitive(String type) => const {
       'dynamic',
       'DateTime',
     }.contains(type);
-    
-  // String _capitalize(String value) {
-  //   if (value.isEmpty) return value;
-  //   return value[0].toUpperCase() + value.substring(1);
-  // }
 
+// String _capitalize(String value) {
+//   if (value.isEmpty) return value;
+//   return value[0].toUpperCase() + value.substring(1);
+// }
