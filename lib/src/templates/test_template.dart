@@ -1,38 +1,43 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 
-/// Provides reusable template generators for building test code.
+/// Provides reusable templates for generating Flutter unit test code.
 ///
-/// [TestTemplates] contains static helper methods used to generate
-/// different sections of a test file, including:
+/// [TestTemplates] is responsible for producing structured test code such as:
 /// - test groups
 /// - individual test cases
-/// - the complete test file structure
+/// - complete test files
 ///
-/// These templates are used by the test generator to produce
-/// consistent and readable unit tests.
+/// These templates are used by the test generator to convert analyzed
+/// source code metadata into runnable Flutter tests.
 class TestTemplates {
-  /// Generates a `group()` block containing tests for a class or
-  /// top-level functions.
+  /// Generates a `group()` block for a class or top-level functions.
+  ///
+  /// This method creates the test group structure and optionally generates:
+  /// - mock initializations
+  /// - `setUp()` blocks
+  /// - service instantiation
   ///
   /// Parameters:
-  /// - [groupName]: The name of the test group.
-  /// - [className]: The class being tested.
-  /// - [tests]: The generated test cases belonging to the group.
-  /// - [isTopLevel]: Indicates whether the tests are for top-level functions.
-  /// - [dependencies]: List of constructor dependencies used to create mocks.
+  /// - [groupName]: Name of the test group.
+  /// - [className]: Class being tested.
+  /// - [tests]: Generated test cases inside the group.
+  /// - [isTopLevel]: Indicates whether the tests belong to top-level functions.
+  /// - [dependencies]: Dependencies that should be mocked.
+  /// - [constructorDependencies]: Dependencies injected through the constructor.
+  /// - [hasInstanceMethods]: Whether the tested class contains instance methods.
   ///
-  /// For class-based tests, this template:
-  /// - Creates a `service` instance of the class under test.
-  /// - Initializes mock dependencies in `setUp()`.
-  /// - Injects mocks into the constructor.
-  ///
-  /// For top-level functions, no service instance or mocks are generated.
+  /// Behavior:
+  /// - If [isTopLevel] is true, no service instance is created.
+  /// - If dependencies exist, mocks are initialized inside `setUp()`.
+  /// - If instance methods exist, the service object is constructed.
   static String group({
     required String groupName,
     required String className,
     required String tests,
     required bool isTopLevel,
     required List<Dependency> dependencies,
+    required List<Dependency> constructorDependencies,
+    required bool hasInstanceMethods,
   }) {
     if (isTopLevel) {
       return """
@@ -42,27 +47,33 @@ $tests
 """;
     }
 
+    /// Initialize mocks inside setUp
     final mockInitializers = dependencies.map((d) {
-      final mockVar = 'mock${d.type[0].toUpperCase()}${d.type.substring(1)}';
+      final mockVar = _mockVar(d.name);
       return '      $mockVar = Mock${d.type}();';
     }).join('\n');
 
-    final constructorArgs = dependencies
-        .map((d) => 'mock${d.type[0].toUpperCase()}${d.type.substring(1)}')
-        .join(', ');
+    /// Constructor arguments
+    final constructorArgs =
+        constructorDependencies.map((d) => _mockVar(d.name)).join(', ');
 
-    final serviceInit = dependencies.isEmpty
-        ? '      service = $className();'
-        : '      service = $className($constructorArgs);';
+    /// Only create service if instance methods exist
+    final serviceDeclaration =
+        hasInstanceMethods ? '    late $className service;\n' : '';
+
+    final serviceInit = hasInstanceMethods
+        ? (dependencies.isEmpty
+            ? '      service = $className();'
+            : '      service = $className($constructorArgs);')
+        : '';
 
     return """
   group('$groupName', () {
 
-    late $className service;
-
+$serviceDeclaration
     setUp(() {
-$mockInitializers
-$serviceInit
+${mockInitializers.isEmpty ? '' : '$mockInitializers\n'}
+${serviceInit.isEmpty ? '' : '$serviceInit\n'}
     });
 
 $tests
@@ -72,19 +83,24 @@ $tests
 
   /// Generates a single `test()` block.
   ///
-  /// Parameters:
-  /// - [name]: The name of the test.
-  /// - [arrange]: Generated setup code for method parameters.
-  /// - [call]: The method invocation expression.
-  /// - [expectedValue]: The expected value used in assertions.
-  /// - [verifyCall]: Optional verification code for mocked dependencies.
-  /// - [isAsync]: Indicates whether the method being tested is asynchronous.
-  /// - [isVoid]: Indicates whether the method returns `void`.
+  /// This template constructs the full structure of a unit test including:
+  /// - Arrange section
+  /// - Act section
+  /// - Assert section
   ///
-  /// The generated test follows the **Arrange–Act–Assert** pattern:
-  /// - Arrange: prepares inputs
-  /// - Act: executes the method
-  /// - Assert: verifies results or side effects
+  /// Parameters:
+  /// - [name]: Name of the test case.
+  /// - [arrange]: Setup logic such as stubbing dependencies.
+  /// - [call]: The method invocation being tested.
+  /// - [expectedValue]: Expected result used in the assertion.
+  /// - [verifyCall]: Optional verification logic for mock interactions.
+  /// - [isAsync]: Whether the tested method is asynchronous.
+  /// - [isVoid]: Whether the method returns `void`.
+  ///
+  /// Behavior:
+  /// - Async methods automatically use `async` and `await`.
+  /// - Non-void methods generate `expect(result, value)` assertions.
+  /// - Void methods include a placeholder comment for verifying side effects.
   static String test({
     required String name,
     required String arrange,
@@ -119,21 +135,25 @@ $verifyCall
 """;
   }
 
-  /// Generates the complete test file content.
+  /// Generates a complete Flutter test file.
+  ///
+  /// The generated file includes:
+  /// - Required Flutter test imports
+  /// - Optional `mocktail` import if mocks are used
+  /// - Target file import
+  /// - Mock class definitions
+  /// - Mock variable declarations
+  /// - All generated test groups
   ///
   /// Parameters:
-  /// - [importPath]: Import path of the source file being tested.
-  /// - [imports]: Additional imports required by generated tests.
-  /// - [mocks]: Generated mock class definitions.
-  /// - [mockVariables]: Mock variable declarations.
+  /// - [importPath]: Path of the file being tested.
+  /// - [imports]: Additional imports required for dependencies.
+  /// - [mocks]: Generated mock classes.
+  /// - [mockVariables]: Variables used to store mock instances.
   /// - [groups]: All generated test groups.
   ///
-  /// This method assembles the final test file including:
-  /// - required `flutter_test` import
-  /// - optional `mocktail` import (if mocks exist)
-  /// - source file import
-  /// - generated mocks
-  /// - test groups inside the `main()` function.
+  /// This method assembles the final output that will be written
+  /// to the generated test file.
   static String file({
     required String importPath,
     required String imports,
@@ -159,5 +179,10 @@ $mockVariables
 $groups
 }
 """;
+  }
+
+  static String _mockVar(String name) {
+    final cap = name[0].toUpperCase() + name.substring(1);
+    return 'mock$cap';
   }
 }

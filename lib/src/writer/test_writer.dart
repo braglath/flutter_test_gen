@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
@@ -146,7 +147,7 @@ class TestWriter {
   }
 
   String _generateAppendTest(MethodInfo method) {
-    final arrange = _generateArrange(method.parameters);
+    final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
 
     final call = method.isTopLevel
@@ -155,15 +156,25 @@ class TestWriter {
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+    // final expectedValue = ProjectUtil().primitiveValue(method.returnType);
 
-    final verifyCall = method.dependencies.isEmpty
+    final expectedValue = method.propertyAccesses.isEmpty
+        ? (method.returnType == 'void' ? '' : 'isA<${method.returnType}>()')
+        : ProjectUtil().primitiveValueForAssert(method.returnType);
+
+    final verifyCall = method.propertyAccesses.isEmpty
         ? ''
-        : method.dependencies.map((dep) {
-            final mockVar =
-                'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
-            return '      verify(() => $mockVar.${method.methodName}()).called(1);';
+        : method.propertyAccesses.map((access) {
+            final mockVar = _mockVar(access.target);
+            return '      verify(() => $mockVar.${access.property}).called(1);';
           }).join('\n');
+    // final verifyCall = method.dependencies.isEmpty
+    //     ? ''
+    //     : method.dependencies.map((dep) {
+    //         final mockVar =
+    //             'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
+    //         return '      verify(() => $mockVar.${method.methodName}()).called(1);';
+    //       }).join('\n');
 
     return TestTemplates.test(
       name: method.methodName,
@@ -196,14 +207,36 @@ class TestWriter {
     return updated;
   }
 
-  String _generateArrange(List<MethodParameter> params) {
-    if (params.isEmpty) return '';
+  String _generateArrange(MethodInfo method) {
+    if (method.parameters.isEmpty && method.propertyAccesses.isEmpty) {
+      return '';
+    }
 
     final buffer = StringBuffer();
 
-    for (final param in params) {
+    /// Generate parameter values
+    for (final param in method.parameters) {
+      final dep = method.parameterDependencies.firstWhere(
+        (d) => d.name == param.name,
+        orElse: () => Dependency('', ''),
+      );
+
+      if (dep.name.isNotEmpty) {
+        final mockVar = _mockVar(dep.name);
+        buffer.writeln('      final ${param.name} = $mockVar;');
+      } else {
+        buffer.writeln(
+          '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
+        );
+      }
+    }
+
+    /// Generate getter stubs
+    for (final access in method.propertyAccesses) {
+      final mockVar = _mockVar(access.target);
+
       buffer.writeln(
-        '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
+        "      when(() => $mockVar.${access.property}).thenReturn(${ProjectUtil().primitiveValueForAssert('String')});",
       );
     }
 
@@ -217,5 +250,10 @@ class TestWriter {
       if (p.isNamed) return '${p.name}: ${p.name}';
       return p.name;
     }).join(', ');
+  }
+
+  String _mockVar(String name) {
+    final cap = name[0].toUpperCase() + name.substring(1);
+    return 'mock$cap';
   }
 }

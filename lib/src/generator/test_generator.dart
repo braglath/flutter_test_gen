@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:dart_style/dart_style.dart';
 import 'package:flutter_test_gen/src/generator/test_builder.dart';
 import 'package:flutter_test_gen/src/parser/dart_parser.dart';
 import 'package:flutter_test_gen/src/utils/path_utils.dart';
@@ -40,7 +41,9 @@ class TestGenerator {
     final methods = parser.extractMethods(filePath);
 
     /// Detect constructor dependencies
-    if (methods.any((m) => m.dependencies.isNotEmpty)) {
+    if (methods.any((m) =>
+        m.constructorDependencies.isNotEmpty ||
+        m.parameterDependencies.isNotEmpty)) {
       print(
         AnsiStyles.cyan(
           '🔧 Detected constructor dependencies → generating mocks\n',
@@ -48,21 +51,8 @@ class TestGenerator {
       );
 
       /// Check if mocktail exists in pubspec.yaml
-      final pubspec = File('pubspec.yaml');
-
-      if (pubspec.existsSync()) {
-        final content = pubspec.readAsStringSync();
-
-        if (!content.contains('mocktail')) {
-          print(
-            AnsiStyles.yellow(
-              '⚠ mocktail dependency missing.\n'
-              'Run:\n'
-              'flutter pub add mocktail --dev\n',
-            ),
-          );
-        }
-      }
+      final project = ProjectUtil()..initialize(filePath);
+      project.detectMocktailDependency(project.projectRoot);
     }
 
     if (methods.isEmpty) {
@@ -81,8 +71,11 @@ class TestGenerator {
     final existing = file.existsSync() ? await file.readAsString() : '';
 
     final builder = TestBuilder(project);
-    builder.generatedImports.add("import 'package:mocktail/mocktail.dart';");
-
+    if (methods.any((m) =>
+        m.constructorDependencies.isNotEmpty ||
+        m.parameterDependencies.isNotEmpty)) {
+      builder.generatedImports.add("import 'package:mocktail/mocktail.dart';");
+    }
     final content = builder.generate(
       methods,
       importPath,
@@ -106,7 +99,8 @@ class TestGenerator {
 
     if (!file.existsSync()) {
       await file.create(recursive: true);
-      await file.writeAsString(content);
+      final formattedContent = _format(content);
+      await file.writeAsString(formattedContent);
 
       print(
         AnsiStyles.green(
@@ -117,7 +111,8 @@ class TestGenerator {
     }
 
     if (existing.trim().isEmpty) {
-      await file.writeAsString(content);
+      final formattedContent = _format(content);
+      await file.writeAsString(formattedContent);
 
       print(
         AnsiStyles.green(
@@ -128,7 +123,8 @@ class TestGenerator {
     }
 
     if (overwrite) {
-      await file.writeAsString(content);
+      final formattedContent = _format(content);
+      await file.writeAsString(formattedContent);
 
       print(
         AnsiStyles.magenta(
@@ -144,13 +140,25 @@ class TestGenerator {
         return;
       }
 
-      await file.writeAsString(result);
+      final formattedContent = _format(result);
+      await file.writeAsString(formattedContent);
 
       print(
         AnsiStyles.blue(
           '➕ Appended tests: ${PathUtils.relativePath(testPath)}',
         ),
       );
+    }
+  }
+
+  String _format(String code) {
+    try {
+      final formatter = DartFormatter(
+        languageVersion: DartFormatter.latestLanguageVersion,
+      );
+      return formatter.format(code);
+    } catch (_) {
+      return code;
     }
   }
 }
