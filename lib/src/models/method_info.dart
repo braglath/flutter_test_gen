@@ -1,5 +1,6 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/resolver/property_access_resolver.dart';
 
 /// Represents metadata about a method discovered during source code analysis.
 ///
@@ -40,7 +41,43 @@ class MethodInfo {
   ///
   /// These dependencies are typically used for generating mock
   /// objects in unit tests.
-  final List<Dependency> dependencies;
+  final List<Dependency> constructorDependencies;
+
+  /// Dependencies that originate from the method parameters.
+  ///
+  /// These are parameters whose types represent external collaborators
+  /// that may need to be mocked or stubbed when generating tests.
+  ///
+  /// Unlike [constructorDependencies], which come from the class
+  /// constructor injection, these dependencies are passed directly
+  /// into the method call.
+  ///
+  /// Example:
+  /// ```dart
+  /// void login(AuthService authService)
+  /// ```
+  ///
+  /// In this case, `AuthService` would appear in [parameterDependencies].
+  final List<Dependency> parameterDependencies;
+
+  /// Information about properties accessed inside the method body.
+  ///
+  /// These represent field or getter accesses performed within the method.
+  /// The generator uses this information to understand interactions with
+  /// class members or injected dependencies.
+  ///
+  /// Example:
+  /// ```dart
+  /// userRepository.save(user);
+  /// ```
+  ///
+  /// Here, `userRepository` would be recorded as a property access.
+  ///
+  /// This data helps the test generator:
+  /// - Detect dependency interactions
+  /// - Generate `verify()` statements
+  /// - Improve test coverage by tracking method side effects
+  final List<PropertyAccessInfo> propertyAccesses;
 
   /// Creates a new [MethodInfo] describing a discovered method.
   ///
@@ -53,7 +90,9 @@ class MethodInfo {
       required this.isAsync,
       required this.isStatic,
       required this.parameters,
-      required this.dependencies});
+      required this.constructorDependencies,
+      required this.parameterDependencies,
+      required this.propertyAccesses});
 
   /// Returns `true` if the method is a top-level function.
   ///

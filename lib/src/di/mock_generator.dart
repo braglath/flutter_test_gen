@@ -19,10 +19,15 @@ class MockGenerator {
   /// Returns the generated mock class code as a string.
   static String generateMockClasses(List<Dependency> deps) {
     final buffer = StringBuffer();
+    final seen = <String>{};
 
-    for (var dep in deps) {
+    for (final dep in deps) {
+      if (_isPrimitive(dep.type)) continue;
+      if (!seen.add(dep.type)) continue;
+
       buffer.writeln(
-          'class Mock${dep.type} extends Mock implements ${dep.type} {}');
+        'class Mock${dep.type} extends Mock implements ${dep.type} {}',
+      );
     }
 
     return buffer.toString();
@@ -41,9 +46,17 @@ class MockGenerator {
   /// Returns the generated variable declarations as a string.
   static String generateMockVariables(List<Dependency> deps) {
     final buffer = StringBuffer();
+    final seen = <String>{};
 
-    for (var dep in deps) {
-      buffer.writeln('late Mock${dep.type} mock${dep.type};');
+    for (final dep in deps) {
+      if (_isPrimitive(dep.type)) continue;
+      if (!seen.add(dep.type)) continue;
+
+      final name = _capitalize(dep.name);
+
+      buffer.writeln(
+        'late Mock${dep.type} mock$name;',
+      );
     }
 
     return buffer.toString();
@@ -62,11 +75,40 @@ class MockGenerator {
   /// Returns the generated initialization code as a string.
   static String generateMockInit(List<Dependency> deps) {
     final buffer = StringBuffer();
+    final seen = <String>{};
 
-    for (var dep in deps) {
-      buffer.writeln('mock${dep.type} = Mock${dep.type}();');
+    for (final dep in deps) {
+      if (_isPrimitive(dep.type)) continue;
+      if (!seen.add(dep.type)) continue;
+
+      final name = _capitalize(dep.name);
+
+      buffer.writeln(
+        'mock$name = Mock${dep.type}();',
+      );
     }
 
     return buffer.toString();
   }
+
+  static String _capitalize(String s) {
+    if (s.isEmpty) return s;
+    return s[0].toUpperCase() + s.substring(1);
+  }
 }
+
+bool _isPrimitive(String type) => const {
+      'int',
+      'double',
+      'num',
+      'String',
+      'bool',
+      'dynamic',
+      'DateTime',
+    }.contains(type);
+    
+  // String _capitalize(String value) {
+  //   if (value.isEmpty) return value;
+  //   return value[0].toUpperCase() + value.substring(1);
+  // }
+

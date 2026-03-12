@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.0
+
+### Added
+
+- Constructor dependency detection and automatic mock generation
+- Parameter dependency detection
+- Automatic mock stubbing for dependency method calls
+- Detection of property accesses and method invocations inside methods
+- Support for async dependency stubs using `thenAnswer`
+- Automatic generation of `verify()` calls for mocked dependencies
+- Improved argument-aware mock generation
+
+### Improved
+
+- Better test template generation
+- Improved return type handling for generated mocks
+- Automatic formatting of generated test files using `dart_style`
+- Smarter detection of instance vs static methods
+- Improved import resolution for generated tests
+
+### Fixed
+
+- Duplicate mock stubbing for repeated property access
+- Incorrect mock verification generation
+- Invalid stub generation for dependency methods
+
 ## 0.0.5
 
 - API documentation

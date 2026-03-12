@@ -37,36 +37,32 @@ class DependencyResolver {
   /// Returns a list of detected [Dependency] objects.
   static List<Dependency> resolve(ClassDeclaration clazz) {
     final dependencies = <Dependency>[];
+    final seen = <String>{};
 
     for (final entity in clazz.members) {
       if (entity is! ConstructorDeclaration) continue;
 
       for (final param in entity.parameters.parameters) {
-        // Case: Constructor(Type repository)
         if (param is SimpleFormalParameter) {
           final name = param.name?.lexeme ?? '';
           final type = param.type?.toSource() ?? '';
 
-          if (name.isNotEmpty && type.isNotEmpty && !_isPrimitive(type)) {
+          if (_valid(name, type) && seen.add(type)) {
             dependencies.add(Dependency(name, type));
           }
         }
 
-        // Case: Constructor(this.repository)
         if (param is FieldFormalParameter) {
           final name = param.name.lexeme;
 
           String? type = param.type?.toSource();
-
-          // If type not declared in constructor, find it from class fields
           type ??= _findFieldType(clazz, name);
 
-          if (name.isNotEmpty && type != null && !_isPrimitive(type)) {
+          if (type != null && _valid(name, type) && seen.add(type)) {
             dependencies.add(Dependency(name, type));
           }
         }
 
-        // Case: named parameters
         if (param is DefaultFormalParameter) {
           final inner = param.parameter;
 
@@ -74,7 +70,7 @@ class DependencyResolver {
             final name = inner.name?.lexeme ?? '';
             final type = inner.type?.toSource() ?? '';
 
-            if (name.isNotEmpty && type.isNotEmpty && !_isPrimitive(type)) {
+            if (_valid(name, type) && seen.add(type)) {
               dependencies.add(Dependency(name, type));
             }
           }
@@ -85,7 +81,7 @@ class DependencyResolver {
             String? type = inner.type?.toSource();
             type ??= _findFieldType(clazz, name);
 
-            if (name.isNotEmpty && type != null && !_isPrimitive(type)) {
+            if (type != null && _valid(name, type) && seen.add(type)) {
               dependencies.add(Dependency(name, type));
             }
           }
@@ -95,6 +91,9 @@ class DependencyResolver {
 
     return dependencies;
   }
+
+  static bool _valid(String name, String type) =>
+      name.isNotEmpty && type.isNotEmpty && !_isPrimitive(type);
 
   static String? _findFieldType(ClassDeclaration clazz, String fieldName) {
     for (final entity in clazz.members) {

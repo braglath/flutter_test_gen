@@ -65,7 +65,6 @@ class TestBuilder {
     String sourceFilePath,
   ) {
     final grouped = <String, List<MethodInfo>>{};
-
     final dependencies = <Dependency>{};
 
     for (final method in methods) {
@@ -73,7 +72,13 @@ class TestBuilder {
 
       resolver.collectImports(method, sourceFilePath, _imports);
 
-      for (final dep in method.dependencies) {
+      for (final dep in method.constructorDependencies) {
+        if (!dependencies.any((d) => d.type == dep.type)) {
+          dependencies.add(dep);
+        }
+      }
+
+      for (final dep in method.parameterDependencies) {
         if (!dependencies.any((d) => d.type == dep.type)) {
           dependencies.add(dep);
         }
@@ -98,27 +103,39 @@ class TestBuilder {
 
       if (tests.isEmpty) return;
 
-      final List<Dependency> dependencies =
-          className == '__top_level__' ? [] : methodList.first.dependencies;
+      final constructorDeps = className == '__top_level__'
+          ? <Dependency>[]
+          : methodList.first.constructorDependencies;
 
-      groups.write(
-        TestTemplates.group(
-          groupName: className == '__top_level__'
-              ? 'Functions | $relativePath'
-              : '$className | $relativePath',
-          className: className,
-          tests: tests.toString(),
-          isTopLevel: className == '__top_level__',
-          dependencies: dependencies,
-        ),
-      );
+      final allDeps = className == '__top_level__'
+          ? <Dependency>[]
+          : {
+              ...methodList.first.constructorDependencies,
+              ...methodList.first.parameterDependencies,
+            }.toList();
+
+      final hasInstanceMethods = methodList.any((m) => !m.isStatic);
+
+      groups.write(TestTemplates.group(
+        groupName: className == '__top_level__'
+            ? 'Functions | $relativePath'
+            : '$className | $relativePath',
+        className: className,
+        tests: tests.toString(),
+        isTopLevel: className == '__top_level__',
+        dependencies: allDeps, // for mocks
+        constructorDependencies: constructorDeps, // for service constructor
+        hasInstanceMethods: hasInstanceMethods,
+      ));
     });
 
-    final mockClasses =
-        MockGenerator.generateMockClasses(dependencies.toList());
+    final allDeps = <Dependency>{
+      ...dependencies,
+    };
 
-    final mockVariables =
-        MockGenerator.generateMockVariables(dependencies.toList());
+    final mockClasses = MockGenerator.generateMockClasses(allDeps.toList());
+
+    final mockVariables = MockGenerator.generateMockVariables(allDeps.toList());
 
     return TestTemplates.file(
       importPath: importPath,
@@ -130,24 +147,40 @@ class TestBuilder {
   }
 
   String _generateSingleTest(MethodInfo method) {
+    print(
+        'propertyAccesses for ${method.methodName}: ${method.propertyAccesses}');
+
     final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
 
-    final call = method.isTopLevel
+    final call = method.className == '__top_level__'
         ? '${method.methodName}($params)'
         : method.isStatic
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+    // final expectedValue = ProjectUtil().primitiveValue(method.returnType);
 
-    final verifyCall = method.dependencies.isEmpty
+    final expectedValue = method.propertyAccesses.isEmpty
+        ? 'isA<${method.returnType}>()'
+        : ProjectUtil().primitiveValueForAssert(method.returnType);
+
+    // final verifyCall = _generateVerify(method);
+
+    final verifyCall = method.propertyAccesses.isEmpty
         ? ''
-        : method.dependencies.map((dep) {
-            final mockVar =
-                'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
-            return '      verify(() => $mockVar.${method.methodName}()).called(1);';
-          }).join('\n');
+        : (() {
+            final seen = <String>{};
+            return method.propertyAccesses.where((access) {
+              final key = '${access.target}.${access.property}';
+              return seen.add(key);
+            }).map((access) {
+              final mockVar = _mockVar(access.target);
+              final args =
+                  access.args.isEmpty ? '' : '(${access.args.join(', ')})';
+              return '      verify(() => $mockVar.${access.property}$args).called(1);';
+            }).join('\n');
+          })();
 
     return TestTemplates.test(
       name: method.methodName,
@@ -163,27 +196,49 @@ class TestBuilder {
   String _generateArrange(MethodInfo method) {
     final buffer = StringBuffer();
 
-    final params = method.parameters;
-
-    // Generate parameter values
-    for (final param in params) {
-      buffer.writeln(
-        '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
+    /// Parameters
+    for (final param in method.parameters) {
+      final dep = method.parameterDependencies.firstWhere(
+        (d) => d.name == param.name,
+        orElse: () => Dependency('', ''),
       );
+
+      if (dep.name.isNotEmpty) {
+        final mockVar = _mockVar(dep.name);
+        buffer.writeln('      final ${param.name} = $mockVar;');
+      } else {
+        buffer.writeln(
+          '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
+        );
+      }
     }
 
-    // Generate mock stubs
-    for (final dep in method.dependencies) {
-      if (dep.type == method.className) continue;
+    /// Stub dependency calls
+    final seen = <String>{};
 
-      final mockVar =
-          'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
+    for (final access in method.propertyAccesses) {
+      final key = '${access.target}.${access.property}';
+      if (!seen.add(key)) continue;
 
-      final stub = ProjectUtil().mockReturnValue(method.returnType);
+      final mockVar = _mockVar(access.target);
 
-      if (method.returnType != 'void') {
+      final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
+
+      if (access.args.isEmpty) {
         buffer.writeln(
-          '      when(() => $mockVar.${method.methodName}()).$stub;',
+          "      when(() => $mockVar.${access.property}).thenReturn('test');",
+        );
+      } else {
+        print('method: $method');
+        print('access: $access');
+        print('access: ${access.returnType}');
+        // stub generation
+        final depReturnType = access.returnType ?? method.returnType;
+        final value = ProjectUtil().primitiveValueForMock(depReturnType);
+
+        buffer.writeln(
+          '      when(() => $mockVar.${access.property}$args)'
+          '.thenAnswer((_) async => $value);',
         );
       }
     }
@@ -195,6 +250,11 @@ class TestBuilder {
         if (p.isNamed) return '${p.name}: ${p.name}';
         return p.name;
       }).join(', ');
+
+  String _mockVar(String name) {
+    final cap = name[0].toUpperCase() + name.substring(1);
+    return 'mock$cap';
+  }
 
   bool _shouldSkip(MethodInfo method) {
     if (method.methodName.startsWith('_')) return true;
