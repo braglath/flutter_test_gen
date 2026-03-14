@@ -72,13 +72,8 @@ class TestBuilder {
 
       resolver.collectImports(method, sourceFilePath, _imports);
 
+      /// Only constructor dependencies should produce mocks
       for (final dep in method.constructorDependencies) {
-        if (!dependencies.any((d) => d.type == dep.type)) {
-          dependencies.add(dep);
-        }
-      }
-
-      for (final dep in method.parameterDependencies) {
         if (!dependencies.any((d) => d.type == dep.type)) {
           dependencies.add(dep);
         }
@@ -103,16 +98,10 @@ class TestBuilder {
 
       if (tests.isEmpty) return;
 
+      /// Constructor dependencies only
       final constructorDeps = className == '__top_level__'
           ? <Dependency>[]
           : methodList.first.constructorDependencies;
-
-      final allDeps = className == '__top_level__'
-          ? <Dependency>[]
-          : {
-              ...methodList.first.constructorDependencies,
-              ...methodList.first.parameterDependencies,
-            }.toList();
 
       final hasInstanceMethods = methodList.any((m) => !m.isStatic);
 
@@ -123,19 +112,20 @@ class TestBuilder {
         className: className,
         tests: tests.toString(),
         isTopLevel: className == '__top_level__',
-        dependencies: allDeps, // for mocks
-        constructorDependencies: constructorDeps, // for service constructor
+        dependencies: constructorDeps,
+        constructorDependencies: constructorDeps,
         hasInstanceMethods: hasInstanceMethods,
       ));
     });
 
-    final allDeps = <Dependency>{
-      ...dependencies,
-    };
+    /// Generate mocks only for constructor dependencies
+    final mockClasses = MockGenerator.generateMockClasses(
+      dependencies.toList(),
+    );
 
-    final mockClasses = MockGenerator.generateMockClasses(allDeps.toList());
-
-    final mockVariables = MockGenerator.generateMockVariables(allDeps.toList());
+    final mockVariables = MockGenerator.generateMockVariables(
+      dependencies.toList(),
+    );
 
     return TestTemplates.file(
       importPath: importPath,
@@ -147,7 +137,6 @@ class TestBuilder {
   }
 
   String _generateSingleTest(MethodInfo method) {
-
     final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
 
@@ -157,13 +146,11 @@ class TestBuilder {
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    // final expectedValue = ProjectUtil().primitiveValue(method.returnType);
+    final returnType = method.returnType.replaceAll('?', '');
 
-    final expectedValue = method.propertyAccesses.isEmpty
-        ? 'isA<${method.returnType}>()'
-        : ProjectUtil().primitiveValueForAssert(method.returnType);
-
-    // final verifyCall = _generateVerify(method);
+    final expectedValue = ProjectUtil.isPrimitive(returnType)
+        ? project.primitiveValueForAssert(returnType)
+        : 'isA<$returnType>()';
 
     final verifyCall = method.propertyAccesses.isEmpty
         ? ''
@@ -195,18 +182,16 @@ class TestBuilder {
     final buffer = StringBuffer();
 
     /// Parameters
+    /// Parameters
     for (final param in method.parameters) {
-      final dep = method.parameterDependencies.firstWhere(
-        (d) => d.name == param.name,
-        orElse: () => Dependency('', ''),
-      );
-
-      if (dep.name.isNotEmpty) {
-        final mockVar = _mockVar(dep.name);
-        buffer.writeln('      final ${param.name} = $mockVar;');
+      /// Enum parameters
+      if (param.isEnum) {
+        buffer.writeln(
+          '      final ${param.name} = ${param.type}.values.first;',
+        );
       } else {
         buffer.writeln(
-          '      final ${param.name} = ${ProjectUtil().generateValue(param)};',
+          '      final ${param.name} = ${project.generateValue(param)};',
         );
       }
     }
@@ -227,12 +212,9 @@ class TestBuilder {
           "      when(() => $mockVar.${access.property}).thenReturn('test');",
         );
       } else {
-        print('method: $method');
-        print('access: $access');
-        print('access: ${access.returnType}');
         // stub generation
         final depReturnType = access.returnType ?? method.returnType;
-        final value = ProjectUtil().primitiveValueForMock(depReturnType);
+        final value = ProjectUtil.primitiveValueForMock(depReturnType);
 
         buffer.writeln(
           '      when(() => $mockVar.${access.property}$args)'

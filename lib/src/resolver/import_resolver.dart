@@ -42,7 +42,8 @@ class ImportResolver {
     for (final param in method.parameters) {
       final type = param.type.replaceAll('?', '');
 
-      if (ProjectUtil().isEnumType(type)) {
+      // if (ProjectUtil().isEnumType(type)) {
+      if (param.isEnum) {
         final import = _resolveImport(type, sourceFilePath);
 
         if (import != null) {

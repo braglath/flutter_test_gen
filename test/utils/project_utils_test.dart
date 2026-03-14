@@ -59,12 +59,6 @@ description: test
       );
     });
 
-    test('isEnumType should detect enums', () {
-      expect(projectUtil.isEnumType('UserGender'), true);
-      expect(projectUtil.isEnumType('String'), false);
-      expect(projectUtil.isEnumType('int'), false);
-    });
-
     test('generateValue should generate primitive values', () {
       final param = const MethodParameter(
         name: 'age',

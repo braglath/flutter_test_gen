@@ -23,6 +23,7 @@ class MockGenerator {
 
     for (final dep in deps) {
       if (_isPrimitive(dep.type)) continue;
+      if (_isEnumLike(dep.type)) continue;
       if (!seen.add(dep.type)) continue;
 
       buffer.writeln(
@@ -50,6 +51,7 @@ class MockGenerator {
 
     for (final dep in deps) {
       if (_isPrimitive(dep.type)) continue;
+      if (_isEnumLike(dep.type)) continue;
       if (!seen.add(dep.type)) continue;
 
       final name = _capitalize(dep.name);
@@ -79,6 +81,7 @@ class MockGenerator {
 
     for (final dep in deps) {
       if (_isPrimitive(dep.type)) continue;
+      if (_isEnumLike(dep.type)) continue;
       if (!seen.add(dep.type)) continue;
 
       final name = _capitalize(dep.name);
@@ -111,3 +114,19 @@ bool _isPrimitive(String type) => const {
 //   if (value.isEmpty) return value;
 //   return value[0].toUpperCase() + value.substring(1);
 // }
+
+bool _isEnumLike(String type) {
+  // enums normally don't end with Repository/Service and don't have generics
+  if (type.contains('<')) return false;
+
+  // common dependency suffixes
+  if (type.endsWith('Repository') ||
+      type.endsWith('Service') ||
+      type.endsWith('Client') ||
+      type.endsWith('DataSource')) {
+    return false;
+  }
+
+  // enums are usually simple capitalized names
+  return true;
+}

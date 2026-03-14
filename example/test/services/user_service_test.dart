@@ -7,7 +7,7 @@ class MockUserRepository extends Mock implements UserRepository {}
 void main() {
   late MockUserRepository mockRepository;
 
-  group('UserService | lib/services/user_service.dart', () {
+  group('UserService | example/lib/services/user_service.dart', () {
     late UserService service;
 
     setUp(() {
@@ -25,7 +25,7 @@ void main() {
       final result = await service.fetchUserName(id);
 
       // Assert
-      expect(result, 'test');
+      expect(result, isA<Future<String>>());
       verify(() => mockRepository.fetchUser(id)).called(1);
     });
   });

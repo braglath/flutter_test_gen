@@ -1,6 +1,7 @@
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:flutter_test_gen/src/di/dependency_filter..dart';
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
@@ -194,10 +195,18 @@ class DartParser {
     for (final p in parameterList.parameters) {
       final param = _unwrapParameter(p);
 
-      final type = param?.type?.toSource();
+      final typeNode = param?.type;
+      final type = typeNode?.toSource();
       final name = param?.name?.lexeme;
 
       if (type == null || name == null) continue;
+
+      final element = typeNode?.type?.element;
+
+      /// Skip enums completely
+      if (element is EnumElement) {
+        continue;
+      }
 
       deps.add(Dependency(name, type));
     }
@@ -211,10 +220,21 @@ class DartParser {
     return parameterList.parameters.map((p) {
       final param = _unwrapParameter(p);
 
+      final typeNode = param?.type;
+      final type = typeNode?.toSource() ?? 'dynamic';
+
+      bool isEnum = false;
+
+      final element = typeNode?.type?.element;
+      if (element is EnumElement) {
+        isEnum = true;
+      }
+
       return MethodParameter(
         name: param?.name?.lexeme ?? 'param',
-        type: param?.type?.toSource() ?? 'dynamic',
+        type: type,
         isNamed: p.isNamed,
+        isEnum: isEnum,
       );
     }).toList();
   }

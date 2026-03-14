@@ -111,15 +111,23 @@ class ProjectUtil {
   /// Nullable markers (`?`) are ignored during the check.
   ///
   /// This is used when generating parameter values for tests.
-  bool isEnumType(String type) {
-    final clean = type.replaceAll('?', '');
+  // bool isEnumType(String type) {
+  // final clean = type.replaceAll('?', '');
 
-    return !const {'String', 'int', 'double', 'bool', 'DateTime', 'dynamic'}
-            .contains(clean) &&
-        (clean[0].toUpperCase() == clean[0] &&
-            !clean.contains(' ') &&
-            !clean.contains('<'));
-  }
+  // if (isPrimitive(clean)) return false;
+
+  // // enums never have generics
+  // if (clean.contains('<')) return false;
+
+  // // repository / service / model classes should not be enums
+  // if (clean.endsWith('Repository') ||
+  //     clean.endsWith('Service') ||
+  //     clean.endsWith('Model')) {
+  //   return false;
+  // }
+
+  // return false; // fallback
+  // }
 
   /// Generates a default value for a method parameter.
   ///
@@ -137,8 +145,9 @@ class ProjectUtil {
   String generateValue(MethodParameter param) {
     final type = param.type.replaceAll('?', '');
 
-    if (ProjectUtil().isEnumType(type)) {
-      return '$type.${defaultEnumValue(type)}';
+    /// ENUM FIX
+    if (param.isEnum || type.endsWith('Role') || type.endsWith('Enum')) {
+      return '$type.values.first';
     }
 
     switch (type) {
@@ -153,8 +162,7 @@ class ProjectUtil {
       case 'DateTime':
         return 'DateTime.now()';
       default:
-        // return '$type()';
-        return 'mock${type[0].toUpperCase()}${type.substring(1)}';
+        return '$type()';
     }
   }
 
@@ -228,11 +236,10 @@ class ProjectUtil {
       case 'double':
         return '1.0';
       case 'bool':
-        return 'true';
+        return 'isTrue';
       case 'String':
         return "'test'";
       default:
-        // return 'null';
         return 'isA<$type>()';
     }
   }
@@ -266,7 +273,7 @@ class ProjectUtil {
   /// ```dart
   /// final value = primitiveValueForMock('int'); // returns '1'
   /// ```
-  String primitiveValueForMock(String type) {
+  static String primitiveValueForMock(String type) {
     if (type.startsWith('Future<')) {
       final inner = type.replaceFirst('Future<', '').replaceFirst('>', '');
       return primitiveValueForMock(inner);
