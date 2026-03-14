@@ -147,8 +147,6 @@ class TestBuilder {
   }
 
   String _generateSingleTest(MethodInfo method) {
-    print(
-        'propertyAccesses for ${method.methodName}: ${method.propertyAccesses}');
 
     final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
