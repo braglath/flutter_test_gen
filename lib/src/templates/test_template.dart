@@ -47,7 +47,7 @@ $tests
 """;
     }
 
-    /// Initialize mocks inside setUp
+    /// Initialize mocks
     final mockInitializers = dependencies.map((d) {
       final mockVar = _mockVar(d.name);
       return '      $mockVar = Mock${d.type}();';
@@ -57,7 +57,7 @@ $tests
     final constructorArgs =
         constructorDependencies.map((d) => _mockVar(d.name)).join(', ');
 
-    /// Only create service if instance methods exist
+    /// Declare service only if needed
     final serviceDeclaration =
         hasInstanceMethods ? '    late $className service;\n' : '';
 
@@ -67,15 +67,23 @@ $tests
             : '      service = $className($constructorArgs);')
         : '';
 
-    return """
-  group('$groupName', () {
+    /// Determine if setUp() is required
+    final needsSetup = mockInitializers.isNotEmpty || serviceInit.isNotEmpty;
 
-$serviceDeclaration
+    final setupBlock = needsSetup
+        ? """
     setUp(() {
 ${mockInitializers.isEmpty ? '' : '$mockInitializers\n'}
 ${serviceInit.isEmpty ? '' : '$serviceInit\n'}
     });
+"""
+        : '';
 
+    return """
+  group('$groupName', () {
+
+$serviceDeclaration
+$setupBlock
 $tests
   });
 """;

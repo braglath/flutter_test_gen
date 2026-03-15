@@ -19,14 +19,14 @@ void main() {
     test('fetchUserName', () async {
       // Arrange
       final id = 'test';
-      when(() => mockRepository.fetchUser(id)).thenAnswer((_) async => 'test');
+      when(() => mockRepository.fetchUser).thenReturn('test');
 
       // Act
       final result = await service.fetchUserName(id);
 
       // Assert
-      expect(result, isA<Future<String>>());
-      verify(() => mockRepository.fetchUser(id)).called(1);
+      expect(result, 'test');
+      verify(() => mockRepository.fetchUser).called(1);
     });
   });
 }
