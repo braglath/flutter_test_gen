@@ -3,9 +3,29 @@ import 'dart:io';
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 
+/// Utility helpers for the command-line interface of `flutter_test_gen`.
+///
+/// [CliUtils] handles argument parsing, file discovery, and execution of
+/// the test generation process. It also provides helper methods for
+/// displaying help messages and resolving file paths.
 class CliUtils {
   CliUtils._();
 
+  /// Executes the test generation command from CLI arguments.
+  ///
+  /// This method:
+  /// - Validates user input.
+  /// - Normalizes the provided file name.
+  /// - Searches for matching files inside the `lib/` directory.
+  /// - Prompts the user if multiple matches are found.
+  /// - Invokes [TestGenerator] to generate the test file.
+  ///
+  /// Supported flags:
+  /// - `--append` : Append missing tests to an existing test file.
+  /// - `--overwrite` : Recreate the entire test file.
+  ///
+  /// If no file is provided or the file cannot be found, an error
+  /// message is printed and the process exits.
   static Future<void> runGenerate(List<String> args) async {
     if (args.isEmpty) {
       print(AnsiStyles.red('Please provide a file name.'));
@@ -50,6 +70,14 @@ class CliUtils {
     );
   }
 
+  /// Prints the CLI help message.
+  ///
+  /// Displays usage instructions, available options, and example commands
+  /// for generating tests using `flutter_test_gen`.
+  ///
+  /// This method is typically triggered when the user runs:
+  /// - `flutter_test_gen --help`
+  /// - `flutter_test_gen -h`
   static void printHelp() {
     print(
       AnsiStyles.green('''
@@ -111,6 +139,15 @@ Examples:
     return matches[index - 1];
   }
 
+  /// Converts an absolute file path into a project-relative path.
+  ///
+  /// If the path starts with the current project root directory,
+  /// the root portion is removed so that the returned value is
+  /// easier to read in CLI output.
+  ///
+  /// Example:
+  /// `/project/lib/services/user_service.dart`
+  /// → `lib/services/user_service.dart`
   static String relativePath(String absolutePath) {
     final root = Directory.current.path;
 
@@ -121,6 +158,13 @@ Examples:
     return absolutePath;
   }
 
+  /// Normalizes a file name provided through CLI arguments.
+  ///
+  /// If the provided [input] does not include the `.dart` extension,
+  /// it will be automatically appended.
+  ///
+  /// Example:
+  /// `user_service` → `user_service.dart`
   static String normalizeFileName(String input) {
     if (input.endsWith('.dart')) {
       return input;
@@ -129,6 +173,19 @@ Examples:
     return '$input.dart';
   }
 
+  /// Searches for Dart files matching [fileName] inside the project.
+  ///
+  /// The search scans the current project directory recursively and
+  /// only returns files located inside the `lib/` folder.
+  ///
+  /// This allows users to provide partial file names while still
+  /// locating the correct source file.
+  ///
+  /// Example:
+  /// Searching for `user_service.dart` might return:
+  /// `lib/services/user_service.dart`
+  ///
+  /// Returns a list of matching file paths.
   static List<String> findFiles(String fileName) {
     final root = Directory.current;
     // final root = Directory("lib");

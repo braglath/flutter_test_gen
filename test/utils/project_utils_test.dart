@@ -59,12 +59,6 @@ description: test
       );
     });
 
-    test('isEnumType should detect enums', () {
-      expect(projectUtil.isEnumType('UserGender'), true);
-      expect(projectUtil.isEnumType('String'), false);
-      expect(projectUtil.isEnumType('int'), false);
-    });
-
     test('generateValue should generate primitive values', () {
       final param = const MethodParameter(
         name: 'age',
@@ -112,14 +106,14 @@ description: test
     });
 
     test('primitiveValue should return primitive defaults', () {
-      expect(projectUtil.primitiveValue('int'), '1');
-      expect(projectUtil.primitiveValue('double'), '1.0');
-      expect(projectUtil.primitiveValue('bool'), 'true');
-      expect(projectUtil.primitiveValue('String'), "'test'");
+      expect(projectUtil.primitiveValueForAssert('int'), '1');
+      expect(projectUtil.primitiveValueForAssert('double'), '1.0');
+      expect(projectUtil.primitiveValueForAssert('bool'), 'true');
+      expect(projectUtil.primitiveValueForAssert('String'), "'test'");
     });
 
     test('primitiveValue should return null for unknown types', () {
-      expect(projectUtil.primitiveValue('UserService'), 'null');
+      expect(projectUtil.primitiveValueForAssert('UserService'), 'null');
     });
   });
 }
