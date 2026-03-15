@@ -1,6 +1,41 @@
+<!-- markdownlint-disable MD024 -->
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## 0.1.1
+
+### Added
+
+- Detection of sealed class pattern matching in `switch` expressions and statements
+- Automatic generation of test cases for each detected switch pattern type
+- `SealedClassResolver` to detect subclasses of sealed/base classes
+- `SwitchCaseInfo` model to represent parsed switch pattern information
+- Support for generating tests for sealed class error/state mappings
+- Propagation of source file imports into generated test files
+
+### Improved
+
+- Import resolution now prefers imports from the original source file
+- Reduced incorrect or guessed imports when generating tests
+- Improved handling of simple object parameters during test generation
+- Cleaner test generation when switch-based logic is detected
+- Improved generator stability when parsing complex method bodies
+
+### Fixed
+
+- Incorrect import generation for classes referenced inside switch patterns
+- Duplicate or conflicting imports when resolving types
+- Missing imports for subclasses used in generated switch tests
+
+### Documentation
+
+- Added documentation for:
+  - `SwitchCaseInfo`
+  - `SealedClassResolver`
+  - `collectImportsForType`
+  - additional model fields used by the generator
 
 ## 0.1.0
 
