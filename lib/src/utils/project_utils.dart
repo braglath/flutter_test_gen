@@ -337,4 +337,44 @@ class ProjectUtil {
       );
     }
   }
+
+  /// Determines whether a Dart type should be treated as a simple
+  /// instantiable object during test generation.
+  ///
+  /// A *simple object* is a type that can be safely instantiated using
+  /// its default constructor instead of being mocked.
+  ///
+  /// This typically includes:
+  /// - Data models
+  /// - DTOs
+  /// - Value objects
+  /// - Plain classes without external dependencies
+  ///
+  /// The method excludes common dependency types that should usually
+  /// be mocked in tests, such as:
+  /// - `Repository`
+  /// - `Service`
+  /// - `Client`
+  /// - `Datasource`
+  ///
+  /// Primitive types are also excluded because they are handled
+  /// separately by [isPrimitive].
+  ///
+  /// Example:
+  /// ```dart
+  /// isSimpleObject('User')            // true
+  /// isSimpleObject('UserRepository')  // false
+  /// isSimpleObject('ApiClient')       // false
+  /// isSimpleObject('String')          // false
+  /// ```
+  ///
+  /// This helper is used by the test generator to decide whether to:
+  /// - instantiate a parameter directly (`User()`)
+  /// - or generate a mock (`MockUserRepository`)
+  static bool isSimpleObject(String type) =>
+      !isPrimitive(type) &&
+      !type.endsWith('Repository') &&
+      !type.endsWith('Service') &&
+      !type.endsWith('Client') &&
+      !type.endsWith('Datasource');
 }

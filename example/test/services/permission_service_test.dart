@@ -12,7 +12,7 @@ void main() {
 
     test('canEdit', () {
       // Arrange
-      final role = UserRole.values.first;
+      final role = UserRole();
 
       // Act
       final result = service.canEdit(role);

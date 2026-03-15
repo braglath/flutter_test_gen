@@ -148,24 +148,38 @@ class TestBuilder {
 
     final returnType = method.returnType.replaceAll('?', '');
 
-    final expectedValue = ProjectUtil.isPrimitive(returnType)
-        ? project.primitiveValueForAssert(returnType)
-        : 'isA<$returnType>()';
+    String expectedValue;
 
-    final verifyCall = method.propertyAccesses.isEmpty
-        ? ''
-        : (() {
-            final seen = <String>{};
-            return method.propertyAccesses.where((access) {
-              final key = '${access.target}.${access.property}';
-              return seen.add(key);
-            }).map((access) {
-              final mockVar = _mockVar(access.target);
-              final args =
-                  access.args.isEmpty ? '' : '(${access.args.join(', ')})';
-              return '      verify(() => $mockVar.${access.property}$args).called(1);';
-            }).join('\n');
-          })();
+    if (method.propertyAccesses.isEmpty) {
+      expectedValue = ProjectUtil.isPrimitive(returnType)
+          ? project.primitiveValueForAssert(returnType)
+          : 'isA<$returnType>()';
+    } else {
+      expectedValue = 'isA<$returnType>()';
+    }
+
+    final verifyCall = (() {
+      final seen = <String>{};
+
+      final accesses = method.propertyAccesses.where((access) {
+        final key = '${access.target}.${access.property}';
+
+        final isConstructorDependency = method.constructorDependencies.any(
+          (d) => access.target.toLowerCase().contains(d.type.toLowerCase()),
+        );
+
+        return isConstructorDependency && seen.add(key);
+      });
+
+      if (accesses.isEmpty) return '';
+
+      return accesses.map((access) {
+        final mockVar = _mockVar(access.target);
+        final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
+
+        return '      verify(() => $mockVar.${access.property}$args).called(1);';
+      }).join('\n');
+    })();
 
     return TestTemplates.test(
       name: method.methodName,
@@ -190,9 +204,15 @@ class TestBuilder {
           '      final ${param.name} = ${param.type}.values.first;',
         );
       } else {
-        buffer.writeln(
-          '      final ${param.name} = ${project.generateValue(param)};',
-        );
+        if (ProjectUtil.isSimpleObject(param.type)) {
+          buffer.writeln(
+            '      final ${param.name} = ${param.type}();',
+          );
+        } else {
+          buffer.writeln(
+            '      final ${param.name} = ${project.generateValue(param)};',
+          );
+        }
       }
     }
 
@@ -202,6 +222,13 @@ class TestBuilder {
     for (final access in method.propertyAccesses) {
       final key = '${access.target}.${access.property}';
       if (!seen.add(key)) continue;
+
+      /// Only stub constructor dependencies
+      final isConstructorDependency = method.constructorDependencies.any(
+          (dep) =>
+              dep.type.toLowerCase().contains(access.target.toLowerCase()));
+
+      if (!isConstructorDependency) continue;
 
       final mockVar = _mockVar(access.target);
 
