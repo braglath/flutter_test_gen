@@ -72,6 +72,14 @@ class TestBuilder {
 
       resolver.collectImports(method, sourceFilePath, _imports);
 
+      /// Add original source imports
+      for (final import in method.sourceImports) {
+        final normalized = import.replaceFirst('../', '');
+        _imports.add(
+          "import 'package:${project.projectName}/$normalized';",
+        );
+      }
+
       /// Only constructor dependencies should produce mocks
       for (final dep in method.constructorDependencies) {
         if (!dependencies.any((d) => d.type == dep.type)) {
@@ -99,11 +107,14 @@ class TestBuilder {
       if (tests.isEmpty) return;
 
       /// Constructor dependencies only
-      final constructorDeps = className == '__top_level__'
+      final hasSwitchCases = methodList.any((m) => m.switchCases.isNotEmpty);
+
+      final constructorDeps = className == '__top_level__' || hasSwitchCases
           ? <Dependency>[]
           : methodList.first.constructorDependencies;
 
-      final hasInstanceMethods = methodList.any((m) => !m.isStatic);
+      final hasInstanceMethods =
+          !hasSwitchCases && methodList.any((m) => !m.isStatic);
 
       groups.write(TestTemplates.group(
         groupName: className == '__top_level__'
@@ -119,13 +130,25 @@ class TestBuilder {
     });
 
     /// Generate mocks only for constructor dependencies
-    final mockClasses = MockGenerator.generateMockClasses(
-      dependencies.toList(),
-    );
+    final mockClasses = dependencies.isEmpty
+        ? ''
+        : MockGenerator.generateMockClasses(dependencies.toList());
 
-    final mockVariables = MockGenerator.generateMockVariables(
-      dependencies.toList(),
-    );
+    final mockVariables = dependencies.isEmpty
+        ? ''
+        : MockGenerator.generateMockVariables(dependencies.toList());
+
+    /// Prefer imports that came from the original source file
+    final sourceImportFiles = methods
+        .expand((m) => m.sourceImports)
+        .map((i) => i.split('/').last)
+        .toSet();
+
+    _imports.removeWhere((import) {
+      final file = import.split('/').last.replaceAll("';", '');
+      return sourceImportFiles.contains(file) == false &&
+          sourceImportFiles.any((src) => file.startsWith(src.split('.').first));
+    });
 
     return TestTemplates.file(
       importPath: importPath,
@@ -137,6 +160,10 @@ class TestBuilder {
   }
 
   String _generateSingleTest(MethodInfo method) {
+    if (method.switchCases.isNotEmpty) {
+      return _generateSwitchTests(method);
+    }
+
     final arrange = _generateArrange(method);
     final params = _generateCallParams(method.parameters);
 
@@ -190,6 +217,31 @@ class TestBuilder {
       isAsync: method.isAsync,
       isVoid: method.isVoid,
     );
+  }
+
+  String _generateSwitchTests(MethodInfo method) {
+    final buffer = StringBuffer();
+
+    final switchInfo = method.switchCases.first;
+
+    for (final type in switchInfo.types) {
+      buffer.writeln('''
+    test('${method.methodName} handles $type', () {
+      // Arrange
+      final error = const $type();
+      final local = AppLocal();
+      final service = ${method.className}(error);
+
+      // Act
+      final result = service.${method.methodName}(local);
+
+      // Assert
+      expect(result, isA<String>());
+    });
+''');
+    }
+
+    return buffer.toString();
   }
 
   String _generateArrange(MethodInfo method) {

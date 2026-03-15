@@ -376,5 +376,6 @@ class ProjectUtil {
       !type.endsWith('Repository') &&
       !type.endsWith('Service') &&
       !type.endsWith('Client') &&
-      !type.endsWith('Datasource');
+      !type.endsWith('Datasource') &&
+      !type.endsWith('Error');
 }

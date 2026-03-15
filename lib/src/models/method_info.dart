@@ -1,5 +1,6 @@
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/models/switch_case_info.dart';
 import 'package:flutter_test_gen/src/resolver/property_access_resolver.dart';
 
 /// Represents metadata about a method discovered during source code analysis.
@@ -60,6 +61,46 @@ class MethodInfo {
   /// In this case, `AuthService` would appear in [parameterDependencies].
   final List<Dependency> parameterDependencies;
 
+  /// Represents detected switch pattern cases within a method.
+  ///
+  /// This field is populated by the parser when it detects a
+  /// `switch` expression or `switch` statement that performs
+  /// pattern matching on sealed classes.
+  ///
+  /// Each [SwitchCaseInfo] contains:
+  /// - the variable being switched on
+  /// - the concrete types used in the cases
+  ///
+  /// Example detected pattern:
+  /// ```dart
+  /// return switch (error) {
+  ///   UserNotFound() => local.invalidUser,
+  ///   UserBlocked() => "User blocked",
+  ///   _ => "Unknown error",
+  /// };
+  /// ```
+  ///
+  /// This allows the test generator to automatically create
+  /// separate test cases for each detected type.
+  final List<SwitchCaseInfo> switchCases;
+
+  /// Stores the import directives from the original source file.
+  ///
+  /// These imports are extracted from the parsed `CompilationUnit`
+  /// and propagated to the generated test file to ensure that all
+  /// referenced types (such as models, errors, or localization
+  /// classes) are correctly resolved.
+  ///
+  /// Example:
+  /// ```dart
+  /// import '../errors/user_error.dart';
+  /// import '../localization/app_local.dart';
+  /// ```
+  ///
+  /// During test generation these imports are converted into
+  /// `package:` imports based on the project name.
+  final List<String> sourceImports;
+
   /// Information about properties accessed inside the method body.
   ///
   /// These represent field or getter accesses performed within the method.
@@ -83,16 +124,19 @@ class MethodInfo {
   ///
   /// All fields are required to ensure the test generator has
   /// complete metadata for generating test cases.
-  MethodInfo(
-      {required this.className,
-      required this.methodName,
-      required this.returnType,
-      required this.isAsync,
-      required this.isStatic,
-      required this.parameters,
-      required this.constructorDependencies,
-      required this.parameterDependencies,
-      required this.propertyAccesses});
+  MethodInfo({
+    required this.className,
+    required this.methodName,
+    required this.returnType,
+    required this.isAsync,
+    required this.isStatic,
+    required this.parameters,
+    required this.constructorDependencies,
+    required this.parameterDependencies,
+    required this.propertyAccesses,
+    this.switchCases = const [],
+    this.sourceImports = const [],
+  });
 
   /// Returns `true` if the method is a top-level function.
   ///
@@ -111,5 +155,5 @@ class MethodInfo {
 
   @override
   String toString() =>
-      'MethodInfo{className=$className, methodName=$methodName, returnType=$returnType, isAsync=$isAsync, isStatic=$isStatic, parameters=$parameters, isTopLevel=$isTopLevel, hasParameters=$hasParameters, isVoid=$isVoid}';
+      'MethodInfo{className=$className, methodName=$methodName, returnType=$returnType, constructor=$constructorDependencies, parameter=$parameterDependencies, property=$propertyAccesses, switchCase=$switchCases, sourceImport=$sourceImports, isAsync=$isAsync, isStatic=$isStatic, parameters=$parameters, isTopLevel=$isTopLevel, hasParameters=$hasParameters, isVoid=$isVoid}';
 }

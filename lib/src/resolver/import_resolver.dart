@@ -128,4 +128,66 @@ class ImportResolver {
 
     return primitives.contains(type);
   }
+
+  /// Attempts to resolve and add the correct import for a given Dart [type].
+  ///
+  /// This method scans Dart files within the same directory (and its
+  /// subdirectories) as the source file to locate a class definition
+  /// matching the provided [type]. Once the class is found, the method
+  /// generates the corresponding `package:` import path and adds it
+  /// to the provided [imports] set.
+  ///
+  /// This is mainly used when the generator detects types that are
+  /// referenced in the generated test (such as sealed class subclasses)
+  /// but are not already part of the collected imports.
+  ///
+  /// Example:
+  /// ```dart
+  /// final error = const UserNotFound();
+  /// ```
+  ///
+  /// If the generator detects `UserNotFound`, this method will search
+  /// for a file containing:
+  ///
+  /// ```dart
+  /// class UserNotFound
+  /// ```
+  ///
+  /// Once located, it will add an import similar to:
+  ///
+  /// ```dart
+  /// import 'package:my_app/errors/user_error.dart';
+  /// ```
+  ///
+  /// Parameters:
+  /// - [type]: The class name that needs to be imported.
+  /// - [sourceFilePath]: The path of the source file currently being analyzed.
+  /// - [imports]: The collection of imports where the resolved import will be added.
+  ///
+  /// Note:
+  /// - The method performs a simple string search for `class <type>`
+  ///   within Dart files.
+  /// - This approach works well for most cases but may not detect
+  ///   classes declared using alternative patterns (e.g. typedefs,
+  ///   mixins, or generated code).
+  void collectImportsForType(
+    String type,
+    String sourceFilePath,
+    Set<String> imports,
+  ) {
+    final file = File(sourceFilePath);
+    final dir = file.parent;
+
+    for (final entity in dir.listSync(recursive: true)) {
+      if (entity is File && entity.path.endsWith('.dart')) {
+        final content = entity.readAsStringSync();
+
+        if (content.contains('class $type')) {
+          final import = project.generateImportPath(entity.path);
+          imports.add("import '$import';");
+          break;
+        }
+      }
+    }
+  }
 }
