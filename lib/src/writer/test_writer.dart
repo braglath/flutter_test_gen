@@ -59,11 +59,13 @@ class TestWriter {
     for (final method in methods) {
       if (_shouldSkip(method)) continue;
 
-      if (_testExists(updated, method.methodName)) continue;
+      if (testExists(existing, method.methodName)) continue;
+
+      final cleanPath = relativePath.replaceFirst('lib/', '');
 
       final groupName = method.isTopLevel
-          ? 'Functions | $relativePath'
-          : '${method.className} | $relativePath';
+          ? 'Functions ($cleanPath)'
+          : '${method.className} ($cleanPath)';
 
       final testCode = _generateAppendTest(method);
 
@@ -86,6 +88,10 @@ class TestWriter {
         updated =
             updated.substring(0, start) + newBlock + updated.substring(end);
       } else {
+        if (updated.contains("group('$groupName'")) {
+          continue;
+        }
+
         /// create new group
         final index = updated.lastIndexOf('}');
 
@@ -113,11 +119,30 @@ class TestWriter {
     return false;
   }
 
-  bool _testExists(String content, String methodName) {
+  /// Checks whether a test already exists for the given [methodName]
+  /// within the provided test file [content].
+  ///
+  /// This method searches for `test()` or `testWidgets()` declarations
+  /// whose test description contains the method name. It helps prevent
+  /// duplicate test generation when the generator runs in append mode.
+  ///
+  /// Example matched tests:
+  /// ```dart
+  /// test('isLong', () { ... });
+  /// test('returns bool when isLong succeeds', () { ... });
+  /// testWidgets('should validate isLong', (tester) async { ... });
+  /// ```
+  ///
+  /// Parameters:
+  /// - [content]: The existing test file content.
+  /// - [methodName]: The method name being checked.
+  ///
+  /// Returns `true` if a matching test is found, otherwise `false`.
+  static bool testExists(String content, String methodName) {
     final escaped = RegExp.escape(methodName);
 
     final pattern = RegExp(
-      "(test|testWidgets)\\s*\\(\\s*['\"]$escaped['\"]",
+      "(test|testWidgets)\\s*\\(\\s*['\"][^'\"]*\\b$escaped\\b[^'\"]*['\"]",
       multiLine: true,
     );
 
@@ -158,26 +183,27 @@ class TestWriter {
 
     // final expectedValue = ProjectUtil().primitiveValue(method.returnType);
 
-    final expectedValue = method.propertyAccesses.isEmpty
-        ? (method.returnType == 'void' ? '' : 'isA<${method.returnType}>()')
-        : ProjectUtil().primitiveValueForAssert(method.returnType);
-
     final verifyCall = method.propertyAccesses.isEmpty
         ? ''
         : method.propertyAccesses.map((access) {
             final mockVar = _mockVar(access.target);
             return '      verify(() => $mockVar.${access.property}).called(1);';
           }).join('\n');
-    // final verifyCall = method.dependencies.isEmpty
-    //     ? ''
-    //     : method.dependencies.map((dep) {
-    //         final mockVar =
-    //             'mock${dep.type[0].toUpperCase()}${dep.type.substring(1)}';
-    //         return '      verify(() => $mockVar.${method.methodName}()).called(1);';
-    //       }).join('\n');
+
+    String returnType = method.returnType.replaceAll('?', '');
+
+    if (returnType.startsWith('Future<')) {
+      returnType = returnType.replaceFirst('Future<', '').replaceFirst('>', '');
+    }
+
+    final expectedValue = ProjectUtil.isPrimitive(returnType)
+        ? ProjectUtil().primitiveValueForAssert(returnType)
+        : 'isA<$returnType>()';
+
+    final testName = ProjectUtil.buildTestName(method, returnType);
 
     return TestTemplates.test(
-      name: method.methodName,
+      name: testName,
       arrange: arrange,
       call: call,
       expectedValue: expectedValue,

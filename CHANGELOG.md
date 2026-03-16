@@ -4,6 +4,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.2
+
+- Corrected mock generation when regenerating tests in append mode.
+- Fixed missing arguments in generated `when()` and `verify()` calls.
+- Improved duplicate test detection to prevent duplicate tests/groups.
+- Minor internal improvements and documentation updates.
+
 ## 0.1.1
 
 ### Added

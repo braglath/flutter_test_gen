@@ -126,8 +126,10 @@ $tests
         : '      final result = $awaitKeyword$call;';
 
     final assertLogic = isVoid
-        ? '      // TODO: verify side effects'
+        ? '      // verify side effects'
         : '      expect(result, $expectedValue);';
+
+    final verifyBlock = verifyCall.trim().isEmpty ? '' : '\n\n$verifyCall';
 
     return """
     test('$name', () $asyncKeyword {
@@ -137,8 +139,7 @@ $arrange
 $actLine
 
       // Assert
-$assertLogic
-$verifyCall
+$assertLogic$verifyBlock
     });
 """;
   }
@@ -175,8 +176,9 @@ $verifyCall
 
     return """
 import 'package:flutter_test/flutter_test.dart';
-${mocktailImport}import '$importPath';
 $imports
+import '$importPath';
+$mocktailImport
 
 $mocks
 

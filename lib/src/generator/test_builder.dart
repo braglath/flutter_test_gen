@@ -4,7 +4,9 @@ import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/resolver/import_resolver.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
+import 'package:flutter_test_gen/src/utils/logger_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
+import 'package:flutter_test_gen/src/writer/test_writer.dart';
 
 /// Builds complete unit test files from extracted method metadata.
 ///
@@ -32,7 +34,7 @@ class TestBuilder {
   ///
   /// These imports are required for the generated test file
   /// to compile correctly.
-  List<String> get generatedImports => _imports.toList();
+  Set<String> get generatedImports => _imports.toSet();
 
   /// Creates a new [TestBuilder] instance for the given [project].
   ///
@@ -74,10 +76,15 @@ class TestBuilder {
 
       /// Add original source imports
       for (final import in method.sourceImports) {
-        final normalized = import.replaceFirst('../', '');
-        _imports.add(
-          "import 'package:${project.projectName}/$normalized';",
-        );
+        final path = import.replaceFirst('../', '');
+
+        if (path.startsWith('package:') || path.startsWith('dart:')) {
+          _imports.add("import '$path';");
+        } else {
+          _imports.add(
+            "import '${project.generateImportPath(path)}';",
+          );
+        }
       }
 
       /// Only constructor dependencies should produce mocks
@@ -99,7 +106,7 @@ class TestBuilder {
       for (final method in methodList) {
         if (_shouldSkip(method)) continue;
 
-        if (existing.contains("test('${method.methodName}'")) continue;
+        if (TestWriter.testExists(existing, method.methodName)) continue;
 
         tests.write(_generateSingleTest(method));
       }
@@ -116,10 +123,12 @@ class TestBuilder {
       final hasInstanceMethods =
           !hasSwitchCases && methodList.any((m) => !m.isStatic);
 
+      final cleanPath = relativePath.replaceFirst('lib/', '');
+
       groups.write(TestTemplates.group(
         groupName: className == '__top_level__'
-            ? 'Functions | $relativePath'
-            : '$className | $relativePath',
+            ? 'Functions ($cleanPath)'
+            : '$className ($cleanPath)',
         className: className,
         tests: tests.toString(),
         isTopLevel: className == '__top_level__',
@@ -150,9 +159,11 @@ class TestBuilder {
           sourceImportFiles.any((src) => file.startsWith(src.split('.').first));
     });
 
+    final importList = _imports.toList()..sort();
+
     return TestTemplates.file(
       importPath: importPath,
-      imports: _imports.join('\n'),
+      imports: importList.join('\n'),
       mocks: mockClasses,
       mockVariables: mockVariables,
       groups: groups.toString(),
@@ -173,43 +184,47 @@ class TestBuilder {
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    final returnType = method.returnType.replaceAll('?', '');
+    String returnType = method.returnType.replaceAll('?', '');
+
+    if (returnType.startsWith('Future<')) {
+      returnType = returnType.replaceFirst('Future<', '').replaceFirst('>', '');
+    }
 
     String expectedValue;
 
-    if (method.propertyAccesses.isEmpty) {
-      expectedValue = ProjectUtil.isPrimitive(returnType)
-          ? project.primitiveValueForAssert(returnType)
-          : 'isA<$returnType>()';
+    if (ProjectUtil.isPrimitive(returnType)) {
+      expectedValue = project.primitiveValueForAssert(returnType);
     } else {
       expectedValue = 'isA<$returnType>()';
     }
 
     final verifyCall = (() {
-      final seen = <String>{};
+      final buffer = StringBuffer();
 
-      final accesses = method.propertyAccesses.where((access) {
-        final key = '${access.target}.${access.property}';
+      for (final access in method.propertyAccesses) {
+        for (final dep in method.constructorDependencies) {
+          if (access.target == dep.name) {
+            final mockVar = _mockVar(dep.name);
+            final args =
+                access.args.isEmpty ? '' : '(${access.args.join(', ')})';
 
-        final isConstructorDependency = method.constructorDependencies.any(
-          (d) => access.target.toLowerCase().contains(d.type.toLowerCase()),
-        );
+            buffer.writeln(
+              '      verify(() => $mockVar.${access.property}$args).called(1);',
+            );
+          }
+        }
+      }
 
-        return isConstructorDependency && seen.add(key);
-      });
-
-      if (accesses.isEmpty) return '';
-
-      return accesses.map((access) {
-        final mockVar = _mockVar(access.target);
-        final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
-
-        return '      verify(() => $mockVar.${access.property}$args).called(1);';
-      }).join('\n');
+      return buffer.toString().trim();
     })();
 
+    debugLog('methodInfo: $method');
+    debugLog('verifyCall: $verifyCall');
+
+    final testName = ProjectUtil.buildTestName(method, returnType);
+
     return TestTemplates.test(
-      name: method.methodName,
+      name: testName,
       arrange: arrange,
       call: call,
       expectedValue: expectedValue,
@@ -292,8 +307,26 @@ class TestBuilder {
         );
       } else {
         // stub generation
-        final depReturnType = access.returnType ?? method.returnType;
-        final value = ProjectUtil.primitiveValueForMock(depReturnType);
+        String depReturnType = access.returnType ?? '';
+
+        /// If analyzer couldn't detect the return type,
+        /// fallback to dependency model inference
+        if (depReturnType.isEmpty) {
+          final dep = method.constructorDependencies.isNotEmpty
+              ? method.constructorDependencies.first
+              : Dependency('dynamic', 'dynamic');
+
+          depReturnType = dep.type.endsWith('Repository')
+              ? dep.type.replaceAll('Repository', '')
+              : dep.type;
+        }
+
+        final fields =
+            resolver.resolveConstructorFields(depReturnType, _imports);
+
+        final value = fields.isEmpty
+            ? '$depReturnType()'
+            : project.buildObject(depReturnType, fields);
 
         buffer.writeln(
           '      when(() => $mockVar.${access.property}$args)'
