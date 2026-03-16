@@ -1,4 +1,4 @@
-import '../repositories/user_repository.dart';
+import 'package:flutter_test_gen_example/repository/user_repository.dart';
 
 class UserService {
   final UserRepository repository;

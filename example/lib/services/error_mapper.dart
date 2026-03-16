@@ -1,5 +1,6 @@
+import 'package:flutter_test_gen_example/localization/app_locale.dart';
+
 import '../errors/user_error.dart';
-import '../localization/app_local.dart';
 
 class ErrorMapper {
   final UserError error;
@@ -10,7 +11,6 @@ class ErrorMapper {
     return switch (error) {
       UserNotFound() => local.invalidUser,
       UserBlocked() => "User blocked",
-      _ => "Unknown error",
     };
   }
 }

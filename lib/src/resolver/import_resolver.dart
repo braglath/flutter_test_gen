@@ -190,4 +190,82 @@ class ImportResolver {
       }
     }
   }
+
+  /// Resolves constructor fields for a given class [type] by inspecting
+  /// imported source files.
+  ///
+  /// This method scans the provided [imports] to locate the Dart file
+  /// containing the class definition for [type]. Once found, it parses
+  /// the class body and extracts `final` fields that are likely required
+  /// for object construction.
+  ///
+  /// The returned map contains:
+  /// - **key** → field name
+  /// - **value** → field type
+  ///
+  /// This information is used by the test generator to automatically
+  /// construct valid object instances when stubbing dependency return
+  /// values.
+  ///
+  /// Example:
+  /// ```dart
+  /// class User {
+  ///   final String name;
+  ///   final int age;
+  /// }
+  /// ```
+  ///
+  /// Result:
+  /// ```dart
+  /// {
+  ///   'name': 'String',
+  ///   'age': 'int'
+  /// }
+  /// ```
+  ///
+  /// Parameters:
+  /// - [type]: The class name whose fields should be resolved.
+  /// - [imports]: Set of imports available in the current test context.
+  ///
+  /// Returns a map of field names and their corresponding types.
+  /// If the class cannot be located, an empty map is returned.
+  Map<String, String> resolveConstructorFields(
+    String type,
+    Set<String> imports,
+  ) {
+    final result = <String, String>{};
+
+    for (final import in imports) {
+      final path = import
+          .replaceAll("import '", '')
+          .replaceAll("';", '')
+          .replaceFirst('package:${project.projectName}/', 'lib/');
+
+      final file = File(path);
+
+      if (!file.existsSync()) continue;
+
+      final content = file.readAsStringSync();
+
+      final classRegex = RegExp('class\\s+$type\\s*\\{([\\s\\S]*?)\\}');
+      final classMatch = classRegex.firstMatch(content);
+
+      if (classMatch == null) continue;
+
+      final body = classMatch.group(1)!;
+
+      final fieldRegex = RegExp(r'final\s+(\w+\??)\s+(\w+);');
+
+      for (final match in fieldRegex.allMatches(body)) {
+        final fieldType = match.group(1)!;
+        final fieldName = match.group(2)!;
+
+        result[fieldName] = fieldType;
+      }
+
+      break;
+    }
+
+    return result;
+  }
 }

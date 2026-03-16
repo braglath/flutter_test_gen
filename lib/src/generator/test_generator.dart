@@ -62,7 +62,7 @@ class TestGenerator {
 
     final project = ProjectUtil()..initialize(filePath);
 
-    final importPath = project.generateImportPath(filePath);
+    final importPath = normalizeImport(project, filePath);
     final relativePath = PathUtils.relativePath(filePath);
     final testPath = PathUtils.testPath(filePath);
 
@@ -71,10 +71,13 @@ class TestGenerator {
     final existing = file.existsSync() ? await file.readAsString() : '';
 
     final builder = TestBuilder(project);
+
     if (methods.any((m) =>
         m.constructorDependencies.isNotEmpty ||
         m.parameterDependencies.isNotEmpty)) {
-      builder.generatedImports.add("import 'package:mocktail/mocktail.dart';");
+      builder.generatedImports
+        ..add("import 'package:mocktail/mocktail.dart';")
+        ..retainWhere((e) => true); // no-op but allows modification
     }
     final content = builder.generate(
       methods,
@@ -94,7 +97,7 @@ class TestGenerator {
       relativePath: relativePath,
       append: append,
       overwrite: overwrite,
-      imports: builder.generatedImports,
+      imports: builder.generatedImports.toList(),
     );
 
     if (!file.existsSync()) {
@@ -160,5 +163,25 @@ class TestGenerator {
     } catch (_) {
       return code;
     }
+  }
+
+  /// Normalizes an import path for generated test files.
+  ///
+  /// If the given [path] already uses a `package:` or `dart:` scheme,
+  /// it is returned unchanged. Otherwise, the path is converted into
+  /// a valid `package:` import using the current project's package name
+  /// via [ProjectUtil.generateImportPath].
+  ///
+  /// Example:
+  /// ```dart
+  /// normalizeImport(project, 'lib/services/user_service.dart')
+  /// // → package:my_app/services/user_service.dart
+  /// ```
+  String normalizeImport(ProjectUtil project, String path) {
+    if (path.startsWith('package:') || path.startsWith('dart:')) {
+      return path;
+    }
+
+    return project.generateImportPath(path);
   }
 }

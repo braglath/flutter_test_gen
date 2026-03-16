@@ -3,6 +3,4 @@ String capitalize(String value) {
   return value[0].toUpperCase() + value.substring(1);
 }
 
-bool isLong(String text) {
-  return text.length > 10;
-}
+bool isLong(String text) => text.length > 10;

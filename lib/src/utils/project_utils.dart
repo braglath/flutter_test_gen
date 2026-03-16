@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
+import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
 /// Provides project-level utilities used during test generation.
@@ -54,15 +56,35 @@ class ProjectUtil {
   ///
   /// Throws an [ArgumentError] if the file is not inside `lib/`.
   String generateImportPath(String filePath) {
-    final libIndex = filePath.indexOf('lib/');
+    filePath = p.normalize(filePath);
 
-    if (libIndex == -1) {
-      throw ArgumentError('File must be inside the lib/ folder');
+    // Already package import
+    if (filePath.startsWith('package:')) {
+      return filePath;
     }
 
-    final relativePath = filePath.substring(libIndex + 4);
+    // Handle broken package imports like package/project/...
+    if (filePath.startsWith('package/')) {
+      filePath = filePath.replaceFirst('package/', '');
+    }
 
-    return 'package:$_projectName/$relativePath';
+    // Absolute path → project relative
+    if (filePath.startsWith(_projectRoot)) {
+      filePath = p.relative(filePath, from: _projectRoot);
+    }
+
+    // If path already starts with project name, clean it
+    if (filePath.startsWith('$_projectName/')) {
+      filePath = filePath.replaceFirst('$_projectName/', '');
+    }
+
+    if (!filePath.startsWith('lib/')) {
+      throw ArgumentError('File must be inside lib/');
+    }
+
+    final relative = filePath.substring(4);
+
+    return 'package:$_projectName/$relative';
   }
 
   // Finds project root by walking up the directory tree
@@ -207,12 +229,12 @@ class ProjectUtil {
       final inner =
           returnType.replaceFirst('Future<', '').replaceFirst('>', '');
 
-      final value = primitiveValueForAssert(inner);
+      final value = primitiveValueForMock(inner);
 
       return 'thenAnswer((_) async => $value)';
     }
 
-    return 'thenReturn(${primitiveValueForAssert(returnType)})';
+    return 'thenReturn(${primitiveValueForMock(returnType)})';
   }
 
   /// Returns a primitive value suitable for assertions in generated tests.
@@ -236,7 +258,7 @@ class ProjectUtil {
       case 'double':
         return '1.0';
       case 'bool':
-        return 'isTrue';
+        return 'true';
       case 'String':
         return "'test'";
       default:
@@ -291,7 +313,7 @@ class ProjectUtil {
       case 'dynamic':
         return "'test'";
       default:
-        return "$type('test')";
+        return '$type()';
     }
   }
 
@@ -378,4 +400,120 @@ class ProjectUtil {
       !type.endsWith('Client') &&
       !type.endsWith('Datasource') &&
       !type.endsWith('Error');
+
+  /// Attempts to resolve the return type of a dependency method.
+  ///
+  /// This method inspects the source file referenced by [sourceImport]
+  /// and searches for a method named [methodName] inside the dependency
+  /// class [dependencyType].
+  ///
+  /// If the method returns a `Future<T>`, the inner type `T` is extracted
+  /// and returned. This is useful when generating mocks for async
+  /// repository or service calls.
+  ///
+  /// Example:
+  /// ```dart
+  /// abstract class UserRepository {
+  ///   Future<User> fetchUser(String id);
+  /// }
+  /// ```
+  ///
+  /// Calling:
+  /// ```dart
+  /// resolveDependencyReturnType(
+  ///   'UserRepository',
+  ///   'fetchUser',
+  ///   'package:app/repository/user_repository.dart',
+  /// )
+  /// ```
+  ///
+  /// Returns:
+  /// ```dart
+  /// 'User'
+  /// ```
+  ///
+  /// Returns `null` if:
+  /// - the source file cannot be located
+  /// - the method signature cannot be detected
+  /// - the return type is not a `Future<T>`
+  String? resolveDependencyReturnType(
+    String dependencyType,
+    String methodName,
+    String sourceImport,
+  ) {
+    final filePath = sourceImport.replaceFirst('package:', 'lib/');
+
+    final file = File(filePath);
+
+    if (!file.existsSync()) return null;
+
+    final content = file.readAsStringSync();
+
+    final regex = RegExp(r'Future<([\w<>?, ]+)>\s+' + methodName + r'\(');
+
+    final match = regex.firstMatch(content);
+
+    if (match != null) {
+      return match.group(1);
+    }
+
+    return null;
+  }
+
+  /// Builds a constructor invocation string for a given class [type].
+  ///
+  /// The [fields] map should contain constructor parameter names
+  /// and their corresponding types. Each field is automatically
+  /// populated with a primitive mock value using
+  /// [primitiveValueForMock].
+  ///
+  /// Example:
+  /// ```dart
+  /// fields = {
+  ///   'name': 'String',
+  ///   'age': 'int'
+  /// }
+  /// ```
+  ///
+  /// Result:
+  /// ```dart
+  /// User(name: 'test', age: 1)
+  /// ```
+  ///
+  /// This helper is used during test generation to automatically
+  /// construct model objects returned from mocked dependencies.
+  String buildObject(String type, Map<String, String> fields) {
+    final args = fields.entries
+        .map((e) => '${e.key}: ${primitiveValueForMock(e.value)}')
+        .join(', ');
+
+    return '$type($args)';
+  }
+
+  /// Generates a readable test name for a method.
+  ///
+  /// If the method returns a primitive type (such as `String`, `int`,
+  /// `bool`, etc.), a descriptive test name is generated in the format:
+  ///
+  /// ```
+  /// returns <type> when <method> succeeds
+  /// ```
+  ///
+  /// Example:
+  /// ```dart
+  /// returns string when fetchUserName succeeds
+  /// ```
+  ///
+  /// For non-primitive return types, the method name itself is used
+  /// as the test name.
+  ///
+  /// This helps produce consistent and readable test descriptions
+  /// across generated unit tests.
+  static String buildTestName(MethodInfo method, String returnType) {
+    if (ProjectUtil.isPrimitive(returnType)) {
+      return 'returns ${returnType.toLowerCase()} when ${method.methodName} succeeds';
+    }
+
+    return method.methodName;
+  }
 }

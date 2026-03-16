@@ -1,9 +1,7 @@
 class CounterService {
-  int increment(int value) {
-    return value + 1;
-  }
+  int increment(int value) => value + 1;
 
-  bool isPositive(int value) {
-    return value > 0;
-  }
+  int decrement(int value) => value - 1;
+
+  int reset() => 0;
 }
