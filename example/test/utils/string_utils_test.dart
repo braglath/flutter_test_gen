@@ -5,7 +5,7 @@ void main() {
   group('Functions (utils/string_utils.dart)', () {
     test('returns string when capitalize succeeds', () {
       // Arrange
-      final value = 'test';
+      const value = 'test';
 
       // Act
       final result = capitalize(value);
@@ -16,7 +16,7 @@ void main() {
 
     test('returns bool when isLong succeeds', () {
       // Arrange
-      final text = 'test';
+      const text = 'test';
 
       // Act
       final result = isLong(text);
