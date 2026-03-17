@@ -4,6 +4,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.3
+
+- Fixed incorrect mock return generation in append mode (User() → User(name: 'test', age: 1))
+- Fixed missing arguments in verify calls
+- Fixed inconsistency between initial generation and append mode
+- Reused TestBuilder for append (single source of truth)
+- Improved model resolution using original sourceImports
+
 ## 0.1.2
 
 - Corrected mock generation when regenerating tests in append mode.

@@ -30,18 +30,18 @@ manually creating boilerplate code.
 
 ## Installation
 
-Add the package to your project:
-
-```yaml
-dev_dependencies:
-  flutter_test_gen: ^0.0.1
-  mocktail: ^1.0.0 # only when you need to mock dependencies
-```
-
-Then run:
+Add the package using:
 
 ```bash
-dart pub get
+flutter pub add flutter_test_gen --dev
+```
+
+This will install the latest version from pub.dev automatically.
+
+If your code uses dependencies, you may also need:
+
+```bash
+flutter pub add mocktail --dev
 ```
 
 ## Usage

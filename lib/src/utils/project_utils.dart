@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
+import 'package:flutter_test_gen/src/generator/type_value_generator.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/utils/logger_utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -55,31 +57,48 @@ class ProjectUtil {
   /// → `package:my_app/services/user_service.dart`
   ///
   /// Throws an [ArgumentError] if the file is not inside `lib/`.
-  String generateImportPath(String filePath) {
+  String generateImportPath(
+    String filePath, {
+    String? currentFilePath,
+  }) {
     filePath = p.normalize(filePath);
 
-    // Already package import
+    debugLog('filePath (input): $filePath');
+
+    // ✅ Already correct
     if (filePath.startsWith('package:')) {
       return filePath;
     }
 
-    // Handle broken package imports like package/project/...
-    if (filePath.startsWith('package/')) {
-      filePath = filePath.replaceFirst('package/', '');
+    if (filePath.startsWith('dart:')) {
+      return filePath;
     }
 
-    // Absolute path → project relative
+    // ✅ Resolve relative ONLY if needed
+    if (!p.isAbsolute(filePath)) {
+      if (currentFilePath == null) {
+        throw ArgumentError(
+          'Relative path requires currentFilePath: $filePath',
+        );
+      }
+
+      final currentDir = p.dirname(currentFilePath);
+      filePath = p.normalize(p.join(currentDir, filePath));
+
+      debugLog('filePath (resolved): $filePath');
+    }
+
+    // ✅ Convert to project-relative
     if (filePath.startsWith(_projectRoot)) {
       filePath = p.relative(filePath, from: _projectRoot);
     }
 
-    // If path already starts with project name, clean it
     if (filePath.startsWith('$_projectName/')) {
       filePath = filePath.replaceFirst('$_projectName/', '');
     }
 
     if (!filePath.startsWith('lib/')) {
-      throw ArgumentError('File must be inside lib/');
+      throw ArgumentError('File must be inside lib/: $filePath');
     }
 
     final relative = filePath.substring(4);
@@ -165,27 +184,14 @@ class ProjectUtil {
   ///
   /// This helps create valid input values in generated tests.
   String generateValue(MethodParameter param) {
-    final type = param.type.replaceAll('?', '');
+    final generatedString = TypeValueGenerator.generate(
+      param.type,
+      isEnum: param.isEnum,
+    );
 
-    /// ENUM FIX
-    if (param.isEnum || type.endsWith('Role') || type.endsWith('Enum')) {
-      return '$type.values.first';
-    }
+    debugLog('generateValue(Arrange): $generatedString');
 
-    switch (type) {
-      case 'int':
-        return '1';
-      case 'String':
-        return "'test'";
-      case 'bool':
-        return 'true';
-      case 'double':
-        return '1.0';
-      case 'DateTime':
-        return 'DateTime.now()';
-      default:
-        return '$type()';
-    }
+    return generatedString;
   }
 
   /// Returns the default enum value expression used in tests.
@@ -206,7 +212,7 @@ class ProjectUtil {
   ///
   /// Primitive types typically do not require mocking and
   /// can be assigned simple literal values.
-  static bool isPrimitive(String type) => const [
+  bool isPrimitive(String type) => const [
         'String',
         'int',
         'double',
@@ -295,7 +301,7 @@ class ProjectUtil {
   /// ```dart
   /// final value = primitiveValueForMock('int'); // returns '1'
   /// ```
-  static String primitiveValueForMock(String type) {
+  String primitiveValueForMock(String type) {
     if (type.startsWith('Future<')) {
       final inner = type.replaceFirst('Future<', '').replaceFirst('>', '');
       return primitiveValueForMock(inner);
@@ -393,7 +399,7 @@ class ProjectUtil {
   /// This helper is used by the test generator to decide whether to:
   /// - instantiate a parameter directly (`User()`)
   /// - or generate a mock (`MockUserRepository`)
-  static bool isSimpleObject(String type) =>
+  bool isSimpleObject(String type) =>
       !isPrimitive(type) &&
       !type.endsWith('Repository') &&
       !type.endsWith('Service') &&
@@ -509,11 +515,37 @@ class ProjectUtil {
   ///
   /// This helps produce consistent and readable test descriptions
   /// across generated unit tests.
-  static String buildTestName(MethodInfo method, String returnType) {
-    if (ProjectUtil.isPrimitive(returnType)) {
+  String buildTestName(MethodInfo method, String returnType) {
+    if (isPrimitive(returnType)) {
       return 'returns ${returnType.toLowerCase()} when ${method.methodName} succeeds';
     }
 
     return method.methodName;
+  }
+
+  /// Normalizes an import path for generated test files.
+  ///
+  /// If the given [path] already uses a `package:` or `dart:` scheme,
+  /// it is returned unchanged. Otherwise, the path is converted into
+  /// a valid `package:` import using the current project's package name
+  /// via [ProjectUtil.generateImportPath].
+  ///
+  /// Example:
+  /// ```dart
+  /// normalizeImport(project, 'lib/services/user_service.dart')
+  /// // → package:my_app/services/user_service.dart
+  /// ```
+  String normalizeImport(
+    String path, {
+    String? currentFilePath,
+  }) {
+    if (path.startsWith('package:') || path.startsWith('dart:')) {
+      return path;
+    }
+
+    return generateImportPath(
+      path,
+      currentFilePath: currentFilePath,
+    );
   }
 }
