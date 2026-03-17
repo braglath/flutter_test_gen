@@ -5,9 +5,18 @@ import 'package:flutter_test_gen_example/services/error_mapper.dart';
 
 void main() {
   group('ErrorMapper (services/error_mapper.dart)', () {
-    test('map', () async {
-      test("map handles UserNotFound", () {});
-      test("map handles UserBlocked", () {});
+    test('map handles UserNotFound', () {
+      // Arrange
+      final error = UserNotFound();
+      final local = AppLocal();
+      final service = ErrorMapper(error);
+
+      // Act
+      final result = service.map(local);
+
+      // Assert
+      expect(result, local.invalidUser);
     });
+    
   });
 }

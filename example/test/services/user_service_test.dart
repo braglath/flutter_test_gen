@@ -19,7 +19,10 @@ void main() {
 
     test('returns string when fetchUserName succeeds', () async {
       // Arrange
-      const id = 'test';
+      final id = 'test';
+      when(
+        () => mockRepository.fetchUser(id),
+      ).thenAnswer((_) async => User(name: 'test', age: 1));
 
       // Act
       final result = await service.fetchUserName(id);

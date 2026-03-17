@@ -230,12 +230,18 @@ class DartParser {
       );
 
       if (subclasses.isNotEmpty) {
-        methodInfo.switchCases.add(
-          SwitchCaseInfo(
-            variable: dep.name,
-            types: subclasses,
-          ),
+        final alreadyExists = methodInfo.switchCases.any(
+          (c) => c.variable == dep.name,
         );
+        if (!alreadyExists) {
+          methodInfo.switchCases.add(
+            SwitchCaseInfo(
+              variable: dep.name,
+              types: subclasses,
+              expectedValues: {},
+            ),
+          );
+        }
       }
     }
 
@@ -373,6 +379,9 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
+    /// ✅ ADD THIS
+    final expectedValues = <String, String>{};
+
     for (final c in node.cases) {
       final guarded = c.guardedPattern;
       final pattern = guarded.pattern;
@@ -380,6 +389,11 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
       if (pattern is ObjectPattern) {
         final type = pattern.type.toSource();
         types.add(type);
+
+        /// extract RHS value
+        final value = _safeSource(c.expression);
+
+        expectedValues[type] = value;
       }
     }
 
@@ -388,6 +402,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
+          expectedValues: expectedValues, // ✅ PASS IT
         ),
       );
     }
@@ -400,6 +415,9 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
+    /// ✅ ADD
+    final expectedValues = <String, String>{};
+
     for (final member in node.members) {
       if (member is SwitchPatternCase) {
         final pattern = member.guardedPattern.pattern;
@@ -407,6 +425,18 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         if (pattern is ObjectPattern) {
           final type = pattern.type.toSource();
           types.add(type);
+
+          /// 🔥 Extract return from body (if exists)
+          final statements = member.statements;
+
+          if (statements.isNotEmpty) {
+            final stmt = statements.first;
+
+            if (stmt is ReturnStatement) {
+              final value = stmt.expression?.toSource() ?? '';
+              expectedValues[type] = value;
+            }
+          }
         }
       }
     }
@@ -416,10 +446,16 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
+          expectedValues: expectedValues, // ✅ PASS
         ),
       );
     }
 
     super.visitSwitchStatement(node);
+  }
+
+  String _safeSource(Expression? expr) {
+    if (expr == null) return '';
+    return expr.toSource().trim();
   }
 }

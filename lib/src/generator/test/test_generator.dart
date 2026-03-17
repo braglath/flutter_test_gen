@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:flutter_test_gen/src/generator/test/test_builder.dart';
+import 'package:flutter_test_gen/src/generator/test/test_file_builder.dart';
 import 'package:flutter_test_gen/src/parser/dart/dart_parser.dart';
 import 'package:flutter_test_gen/src/utils/path_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
@@ -70,7 +70,7 @@ class TestGenerator {
 
     final existing = file.existsSync() ? await file.readAsString() : '';
 
-    final builder = TestBuilder(project);
+    final builder = TestFileBuilder(project);
 
     if (methods.any((m) =>
         m.constructorDependencies.isNotEmpty ||
@@ -79,7 +79,7 @@ class TestGenerator {
         ..add("import 'package:mocktail/mocktail.dart';")
         ..retainWhere((e) => true); // no-op but allows modification
     }
-    final content = builder.generate(
+    final content = builder.build(
       methods,
       importPath,
       relativePath,

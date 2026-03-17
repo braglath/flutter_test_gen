@@ -10,7 +10,7 @@ void main() {
       service = PermissionService();
     });
 
-    test('returns bool when canEdit succeeds', () async {
+    test('returns bool when canEdit succeeds', () {
       // Arrange
       final role = UserRole.values.first;
 

@@ -86,12 +86,21 @@ class TestWriter {
           ? 'Functions ($cleanPath)'
           : '${method.className} ($cleanPath)';
 
-      final testCase = caseBuilder.build(method);
+      final testCases = caseBuilder.build(method);
 
-      final testCode = UnitTestTemplates.test(
-        name: testCase.description,
-        body: testCase.body,
-      );
+      final buffer = StringBuffer();
+
+      for (final testCase in testCases) {
+        buffer.writeln(
+          UnitTestTemplates.test(
+            name: testCase.description,
+            body: testCase.body,
+            isAsync: method.isAsync,
+          ),
+        );
+      }
+
+      final testCode = buffer.toString();
 
       /// Existing group
       if (updated.contains("group('$groupName'")) {

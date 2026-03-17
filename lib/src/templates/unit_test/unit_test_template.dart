@@ -112,12 +112,16 @@ $tests
   static String test({
     required String name,
     required String body,
-  }) =>
-      """
-  test('$name', () async {
+    required bool isAsync, // ✅ ADD THIS
+  }) {
+    final asyncKeyword = isAsync ? 'async ' : '';
+
+    return """
+    test('$name', () $asyncKeyword{
 $body
-  });
+    });
 """;
+  }
 
   /// Generates a complete Flutter test file.
   ///
