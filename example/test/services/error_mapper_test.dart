@@ -7,7 +7,7 @@ void main() {
   group('ErrorMapper (services/error_mapper.dart)', () {
     test('map handles UserNotFound', () {
       // Arrange
-      final error = UserNotFound();
+      const error = UserNotFound();
       final local = AppLocal();
       final service = ErrorMapper(error);
 
@@ -19,7 +19,7 @@ void main() {
     });
     test('map handles UserBlocked', () {
       // Arrange
-      final error = UserBlocked();
+      const error = UserBlocked();
       final local = AppLocal();
       final service = ErrorMapper(error);
 

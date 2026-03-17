@@ -1,7 +1,7 @@
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
 import 'package:flutter_test_gen/src/generator/test/test_case_builder.dart';
-import 'package:flutter_test_gen/src/templates/unit_test/unit_test_template.dart';
+import 'package:flutter_test_gen/src/templates/unit_test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/utils/test_utils.dart';
 

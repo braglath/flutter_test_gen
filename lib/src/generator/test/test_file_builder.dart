@@ -3,7 +3,7 @@ import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dar
 import 'package:flutter_test_gen/src/analyzer/import/import_resolver.dart';
 import 'package:flutter_test_gen/src/generator/mock/mock_generator.dart';
 import 'package:flutter_test_gen/src/generator/test/test_group_builder.dart';
-import 'package:flutter_test_gen/src/templates/unit_test/unit_test_template.dart';
+import 'package:flutter_test_gen/src/templates/unit_test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 class TestFileBuilder {

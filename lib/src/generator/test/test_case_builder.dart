@@ -1,11 +1,12 @@
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/analyzer/import/import_resolver.dart';
+import 'package:flutter_test_gen/src/generator/test/core/act_builder.dart';
 import 'package:flutter_test_gen/src/generator/test/core/arrange_builder.dart';
+import 'package:flutter_test_gen/src/generator/test/core/assert_builder.dart';
+import 'package:flutter_test_gen/src/generator/test/core/verify_builder.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/test_case.dart';
-import 'package:flutter_test_gen/src/utils/naming_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
-import 'package:flutter_test_gen/src/utils/test_utils.dart';
 import 'package:flutter_test_gen/src/utils/type_utils.dart';
 
 class TestCaseBuilder {
@@ -29,68 +30,57 @@ class TestCaseBuilder {
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    String returnType = TypeUtils.unwrap(method.returnType);
+    final returnType = TypeUtils.unwrap(method.returnType);
 
-    if (TypeUtils.isFuture(returnType)) {
-      returnType = returnType.replaceFirst('Future<', '').replaceFirst('>', '');
-    }
-
-    final expectedValue = project.isPrimitive(returnType)
-        ? project.primitiveValueForAssert(returnType)
-        : 'isA<$returnType>()';
-
-    final verifyCall = _buildVerify(method);
+    final verifyCall = VerifyBuilder().build(method);
 
     return [
       TestCase(
         description: project.buildTestName(method, returnType),
-        body: _buildTestBody(
+        body: _composeTestBody(
+          method: method,
           arrange: arrange,
           call: call,
-          expectedValue: expectedValue,
-          isAsync: TestUtils.needsAsync(method),
-          isVoid: method.isVoid,
+          returnType: returnType,
           verifyCall: verifyCall,
         ),
       )
     ];
   }
 
-  String _buildTestBody({
+  String _composeTestBody({
+    required MethodInfo method,
     required String arrange,
     required String call,
-    required String expectedValue,
-    required bool isAsync,
-    required bool isVoid,
+    required String returnType,
     required String verifyCall,
   }) {
     final buffer = StringBuffer();
 
+    /// Arrange
     if (arrange.trim().isNotEmpty) {
       buffer.writeln('    // Arrange');
       buffer.writeln(arrange);
       buffer.writeln();
     }
 
+    /// Act
     buffer.writeln('    // Act');
-
-    if (isAsync) {
-      buffer.writeln('    final result = await $call;');
-    } else if (!isVoid) {
-      buffer.writeln('    final result = $call;');
-    } else {
-      buffer.writeln('    $call;');
-    }
-
+    final act = ActBuilder().build(
+      method: method,
+      call: call,
+    );
+    buffer.write(act);
     buffer.writeln();
-    buffer.writeln('    // Assert');
 
-    if (!isVoid) {
-      buffer.writeln('    expect(result, $expectedValue);');
-    } else {
-      buffer.writeln('    // verify side effects');
-    }
+    /// Assert
+    final assertCall = AssertBuilder(project).build(
+      method: method,
+      returnType: returnType,
+    );
+    buffer.write(assertCall);
 
+    /// Verify
     if (verifyCall.trim().isNotEmpty) {
       buffer.writeln();
       buffer.writeln(verifyCall);
@@ -99,115 +89,10 @@ class TestCaseBuilder {
     return buffer.toString();
   }
 
-  // String _generateArrange(MethodInfo method) {
-  //   final buffer = StringBuffer();
-
-  //   /// Parameters
-  //   for (final param in method.parameters) {
-  //     final value = project.generateValue(param);
-  //     buffer.writeln('    final ${param.name} = $value;');
-  //   }
-
-  //   /// Mock stubbing
-  //   final seen = <String>{};
-
-  //   for (final access in method.propertyAccesses) {
-  //     final key = '${access.target}.${access.property}';
-  //     if (!seen.add(key)) continue;
-
-  //     final dep = method.constructorDependencies.firstWhere(
-  //       (d) => d.name == access.target,
-  //       orElse: () => Dependency('', ''),
-  //     );
-
-  //     if (dep.name.isEmpty) continue;
-
-  //     final mockVar = NamingUtils.mockVar(dep.name);
-  //     final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
-
-  //     String returnType = access.returnType ?? '';
-
-  //     final needAsync = TestUtils.needsAsync(method);
-
-  //     final isAsync =
-  //         access.returnType?.startsWith('Future<') == true || needAsync;
-
-  //     if (!isAsync && needAsync) {
-  //       returnType = 'Future<$returnType>';
-  //     }
-
-  //     if (returnType.isEmpty || returnType == 'dynamic') {
-  //       if (dep.type.endsWith('Repository')) {
-  //         returnType = dep.type.replaceAll('Repository', '');
-  //       }
-  //     }
-
-  //     final inner = returnType.startsWith('Future<')
-  //         ? returnType.replaceFirst('Future<', '').replaceFirst('>', '')
-  //         : returnType;
-
-  //     if (isAsync) {
-  //       final fields = resolver.resolveConstructorFields(
-  //         inner,
-  //         method.sourceImports.toSet(),
-  //       );
-
-  //       final value = project.isPrimitive(inner)
-  //           ? project.primitiveValueForMock(inner)
-  //           : fields.isEmpty
-  //               ? '$inner()'
-  //               : project.buildObject(inner, fields);
-
-  //       buffer.writeln(
-  //         '    when(() => $mockVar.${access.property}$args)'
-  //         '.thenAnswer((_) async => $value);',
-  //       );
-  //     } else {
-  //       final value = project.primitiveValueForMock(inner);
-
-  //       buffer.writeln(
-  //         '    when(() => $mockVar.${access.property}$args)'
-  //         '.thenReturn($value);',
-  //       );
-  //     }
-  //   }
-
-  //   return buffer.toString();
-  // }
-
-  String _buildVerify(MethodInfo method) {
-    final buffer = StringBuffer();
-
-    for (final access in method.propertyAccesses) {
-      for (final dep in method.constructorDependencies) {
-        if (access.target == dep.name) {
-          final mockVar = NamingUtils.mockVar(dep.name);
-          final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
-
-          buffer.writeln(
-            '    verify(() => $mockVar.${access.property}$args).called(1);',
-          );
-        }
-      }
-    }
-
-    return buffer.toString().trim();
-  }
-
   String _generateCallParams(MethodInfo method) => method.parameters.map((p) {
         if (p.isNamed) return '${p.name}: ${p.name}';
         return p.name;
       }).join(', ');
-
-  // String _generateSwitchTests(MethodInfo method) {
-  //   final buffer = StringBuffer();
-
-  //   for (final type in method.switchCases.first.types) {
-  //     buffer.writeln('    test("${method.methodName} handles $type", () {});');
-  //   }
-
-  //   return buffer.toString();
-  // }
 
   List<TestCase> _buildSwitchTestCases(MethodInfo method) {
     final cases = <TestCase>[];
