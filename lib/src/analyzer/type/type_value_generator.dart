@@ -74,7 +74,6 @@ class TypeValueGenerator {
         return 'DateTime.now()';
       default:
         return '$clean()';
-      // return '$clean.values.first'; // safe fallback
     }
   }
 }

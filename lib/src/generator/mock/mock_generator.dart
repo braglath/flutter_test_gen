@@ -1,4 +1,4 @@
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
 
 /// Generates mock classes and variables for detected dependencies.
 ///
@@ -109,11 +109,6 @@ bool _isPrimitive(String type) => const {
       'dynamic',
       'DateTime',
     }.contains(type);
-
-// String _capitalize(String value) {
-//   if (value.isEmpty) return value;
-//   return value[0].toUpperCase() + value.substring(1);
-// }
 
 bool _isEnumLike(String type) {
   // enums normally don't end with Repository/Service and don't have generics

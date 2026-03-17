@@ -1,15 +1,16 @@
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
+import 'package:flutter_test_gen/src/utils/naming_utils.dart';
 
 /// Provides reusable templates for generating Flutter unit test code.
 ///
-/// [TestTemplates] is responsible for producing structured test code such as:
+/// [UnitTestTemplates] is responsible for producing structured test code such as:
 /// - test groups
 /// - individual test cases
 /// - complete test files
 ///
 /// These templates are used by the test generator to convert analyzed
 /// source code metadata into runnable Flutter tests.
-class TestTemplates {
+class UnitTestTemplates {
   /// Generates a `group()` block for a class or top-level functions.
   ///
   /// This method creates the test group structure and optionally generates:
@@ -49,13 +50,14 @@ $tests
 
     /// Initialize mocks
     final mockInitializers = dependencies.map((d) {
-      final mockVar = _mockVar(d.name);
+      final mockVar = NamingUtils.mockVar(d.name);
       return '      $mockVar = Mock${d.type}();';
     }).join('\n');
 
     /// Constructor arguments
-    final constructorArgs =
-        constructorDependencies.map((d) => _mockVar(d.name)).join(', ');
+    final constructorArgs = constructorDependencies
+        .map((d) => NamingUtils.mockVar(d.name))
+        .join(', ');
 
     /// Declare service only if needed
     final serviceDeclaration =
@@ -111,35 +113,14 @@ $tests
   /// - Void methods include a placeholder comment for verifying side effects.
   static String test({
     required String name,
-    required String arrange,
-    required String call,
-    required String expectedValue,
-    required String verifyCall,
+    required String body,
     required bool isAsync,
-    required bool isVoid,
   }) {
-    final asyncKeyword = isAsync ? 'async' : '';
-    final awaitKeyword = isAsync ? 'await ' : '';
-
-    final actLine = isVoid
-        ? '      $awaitKeyword$call;'
-        : '      final result = $awaitKeyword$call;';
-
-    final assertLogic = isVoid
-        ? '      // verify side effects'
-        : '      expect(result, $expectedValue);';
-
-    final verifyBlock = verifyCall.trim().isEmpty ? '' : '\n\n$verifyCall';
+    final asyncKeyword = isAsync ? 'async ' : '';
 
     return """
-    test('$name', () $asyncKeyword {
-      // Arrange
-$arrange
-      // Act
-$actLine
-
-      // Assert
-$assertLogic$verifyBlock
+    test('$name', () $asyncKeyword{
+$body
     });
 """;
   }
@@ -189,10 +170,5 @@ $mockVariables
 $groups
 }
 """;
-  }
-
-  static String _mockVar(String name) {
-    final cap = name[0].toUpperCase() + name.substring(1);
-    return 'mock$cap';
   }
 }

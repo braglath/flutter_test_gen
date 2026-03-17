@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
+import 'package:flutter_test_gen/src/models/cli_options.dart';
+import 'package:flutter_test_gen/src/services/file_resolver.dart';
 
 /// Utility helpers for the command-line interface of `flutter_test_gen`.
 ///
@@ -29,31 +31,13 @@ class CliUtils {
   static Future<void> runGenerate(List<String> args) async {
     if (args.isEmpty) {
       print(AnsiStyles.red('Please provide a file name.'));
-      return;
-    }
-
-    final input = args.first;
-    final fileName = CliUtils.normalizeFileName(input);
-
-    final append = args.contains('--append');
-    final overwrite = args.contains('--overwrite');
-
-    final matches = CliUtils.findFiles(fileName);
-
-    if (matches.isEmpty) {
-      print(
-        AnsiStyles.red('❌ File not found inside lib/: $fileName'),
-      );
       exit(1);
     }
 
-    String filePath;
+    final options = CliOptions.fromArgs(args);
+    final fileName = CliUtils.normalizeFileName(options.input);
 
-    if (matches.length == 1) {
-      filePath = matches.first;
-    } else {
-      filePath = _selectFile(matches);
-    }
+    final filePath = FileResolver.resolve(fileName);
 
     print(
       AnsiStyles.cyan(
@@ -65,8 +49,8 @@ class CliUtils {
 
     await generator.generate(
       filePath,
-      append: append || !overwrite,
-      overwrite: overwrite,
+      append: options.append,
+      overwrite: options.overwrite,
     );
   }
 
@@ -117,7 +101,26 @@ Examples:
     );
   }
 
-  static String _selectFile(List<String> matches) {
+  /// Prompts the user to select a file when multiple matches are found.
+  ///
+  /// Displays a numbered list of matching files and reads user input
+  /// from the console to determine the selected file.
+  ///
+  /// Behavior:
+  /// - Prints all matching files with indices
+  /// - Accepts user input for selection
+  /// - Validates the selected index
+  /// - Exits the process if the input is invalid
+  ///
+  /// Parameters:
+  /// - [matches]: List of file paths that matched the search query
+  ///
+  /// Returns:
+  /// The selected file path from the list.
+  ///
+  /// Exits:
+  /// - Terminates the process with exit code `1` if the selection is invalid
+  static String selectFile(List<String> matches) {
     print(AnsiStyles.yellow('Multiple files found:\n'));
 
     for (int i = 0; i < matches.length; i++) {

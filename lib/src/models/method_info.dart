@@ -1,7 +1,7 @@
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
+import 'package:flutter_test_gen/src/analyzer/type/property_access_resolver.dart';
+import 'package:flutter_test_gen/src/models/parameter_info.dart';
 import 'package:flutter_test_gen/src/models/switch_case_info.dart';
-import 'package:flutter_test_gen/src/resolver/property_access_resolver.dart';
 
 /// Represents metadata about a method discovered during source code analysis.
 ///
@@ -35,8 +35,8 @@ class MethodInfo {
 
   /// The list of parameters required by the method.
   ///
-  /// Each parameter is represented by a [MethodParameter].
-  final List<MethodParameter> parameters;
+  /// Each parameter is represented by a [ParameterInfo].
+  final List<ParameterInfo> parameters;
 
   /// The list of dependencies required by the class constructor.
   ///

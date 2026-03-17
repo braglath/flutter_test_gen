@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_test_gen/src/parser/dart_parser.dart';
+import 'package:flutter_test_gen/src/parser/dart/dart_parser.dart';
 import 'package:test/test.dart';
 
 void main() {
