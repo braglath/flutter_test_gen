@@ -62,7 +62,7 @@ class TestGenerator {
 
     final project = ProjectUtil()..initialize(filePath);
 
-    final importPath = normalizeImport(project, filePath);
+    final importPath = project.normalizeImport(filePath);
     final relativePath = PathUtils.relativePath(filePath);
     final testPath = PathUtils.testPath(filePath);
 
@@ -87,7 +87,7 @@ class TestGenerator {
       filePath,
     );
 
-    final engine = TestWriter();
+    final engine = TestWriter(project);
 
     final result = engine.process(
       file: file,
@@ -163,25 +163,5 @@ class TestGenerator {
     } catch (_) {
       return code;
     }
-  }
-
-  /// Normalizes an import path for generated test files.
-  ///
-  /// If the given [path] already uses a `package:` or `dart:` scheme,
-  /// it is returned unchanged. Otherwise, the path is converted into
-  /// a valid `package:` import using the current project's package name
-  /// via [ProjectUtil.generateImportPath].
-  ///
-  /// Example:
-  /// ```dart
-  /// normalizeImport(project, 'lib/services/user_service.dart')
-  /// // → package:my_app/services/user_service.dart
-  /// ```
-  String normalizeImport(ProjectUtil project, String path) {
-    if (path.startsWith('package:') || path.startsWith('dart:')) {
-      return path;
-    }
-
-    return project.generateImportPath(path);
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/models/switch_case_info.dart';
 import 'package:flutter_test_gen/src/resolver/property_access_resolver.dart';
 import 'package:flutter_test_gen/src/resolver/sealed_class_resolver.dart';
+import 'package:path/path.dart' as p;
 
 /// Parses Dart source files and extracts method metadata.
 ///
@@ -65,7 +68,8 @@ class DartParser {
     final methods = <MethodInfo>[];
 
     for (final declaration in unit.declarations) {
-      methods.addAll(_processDeclaration(declaration, unit, sourceImports));
+      methods.addAll(
+          _processDeclaration(declaration, unit, sourceImports, filePath));
     }
 
     return methods;
@@ -75,37 +79,38 @@ class DartParser {
     CompilationUnitMember declaration,
     CompilationUnit unit,
     List<String> sourceImports,
+    String filePath, // ✅ ADD
   ) {
     if (declaration is ClassDeclaration) {
       final constructorDeps = DependencyResolver.resolve(declaration);
 
       return _extractMembers(
-        containerName: declaration.name.lexeme,
-        members: declaration.members,
-        dependencies: constructorDeps,
-        unit: unit,
-        sourceImports: sourceImports,
-      );
+          containerName: declaration.name.lexeme,
+          members: declaration.members,
+          dependencies: constructorDeps,
+          unit: unit,
+          sourceImports: sourceImports,
+          filePath: filePath);
     }
 
     if (declaration is MixinDeclaration) {
       return _extractMembers(
-        containerName: declaration.name.lexeme,
-        members: declaration.members,
-        dependencies: [],
-        unit: unit,
-        sourceImports: sourceImports,
-      );
+          containerName: declaration.name.lexeme,
+          members: declaration.members,
+          dependencies: [],
+          unit: unit,
+          sourceImports: sourceImports,
+          filePath: filePath);
     }
 
     if (declaration is ExtensionDeclaration) {
       return _extractMembers(
-        containerName: declaration.name?.lexeme ?? 'Extension',
-        members: declaration.members,
-        dependencies: [],
-        unit: unit,
-        sourceImports: sourceImports,
-      );
+          containerName: declaration.name?.lexeme ?? 'Extension',
+          members: declaration.members,
+          dependencies: [],
+          unit: unit,
+          sourceImports: sourceImports,
+          filePath: filePath);
     }
 
     if (declaration is FunctionDeclaration) {
@@ -121,6 +126,7 @@ class DartParser {
     required List<Dependency> dependencies,
     required CompilationUnit unit,
     required List<String> sourceImports,
+    required String filePath, // ✅ add
   }) {
     final methods = <MethodInfo>[];
 
@@ -135,6 +141,7 @@ class DartParser {
             dependencies,
             unit,
             sourceImports,
+            filePath,
           ),
         );
       }
@@ -155,6 +162,8 @@ class DartParser {
         isStatic: true,
         parameters: _parseParameters(
           declaration.functionExpression.parameters,
+          sourceImports,
+          '', // top-level (no file needed OR pass filePath if available)
         ),
         constructorDependencies: [],
         parameterDependencies: [],
@@ -173,6 +182,7 @@ class DartParser {
     List<Dependency> constructorDeps,
     CompilationUnit unit,
     List<String> sourceImports,
+    String filePath, // ✅ add
   ) {
     final paramDeps = _extractParameterDependencies(member.parameters);
 
@@ -204,7 +214,11 @@ class DartParser {
         returnType: member.returnType?.toSource() ?? 'dynamic',
         isAsync: member.body.isAsynchronous,
         isStatic: member.isStatic,
-        parameters: _parseParameters(member.parameters),
+        parameters: _parseParameters(
+          member.parameters,
+          sourceImports,
+          filePath,
+        ),
         constructorDependencies: constructorFiltered,
         parameterDependencies: paramFiltered,
         propertyAccesses: propertyAccesses,
@@ -261,7 +275,11 @@ class DartParser {
     return deps;
   }
 
-  List<MethodParameter> _parseParameters(FormalParameterList? parameterList) {
+  List<MethodParameter> _parseParameters(
+    FormalParameterList? parameterList,
+    List<String> sourceImports,
+    String currentFilePath,
+  ) {
     if (parameterList == null) return [];
 
     return parameterList.parameters.map((p) {
@@ -273,8 +291,15 @@ class DartParser {
       bool isEnum = false;
 
       final element = typeNode?.type?.element;
+
       if (element is EnumElement) {
         isEnum = true;
+      } else if (currentFilePath.isNotEmpty) {
+        isEnum = _isEnumFromImports(
+          type,
+          sourceImports,
+          currentFilePath,
+        );
       }
 
       return MethodParameter(
@@ -309,6 +334,37 @@ class DartParser {
     node.visitChildren(
       _SwitchVisitor(method),
     );
+  }
+
+  bool _isEnumFromImports(
+    String type,
+    List<String> imports,
+    String currentFilePath,
+  ) {
+    for (final import in imports) {
+      if (import.startsWith('dart:')) continue;
+
+      // resolve path
+      String path = import;
+
+      if (import.startsWith('package:')) {
+        path = import.replaceFirst('package:', 'lib/');
+      } else {
+        final dir = File(currentFilePath).parent.path;
+        path = p.normalize(p.join(dir, import));
+      }
+
+      final file = File(path);
+      if (!file.existsSync()) continue;
+
+      final content = file.readAsStringSync();
+
+      if (content.contains('enum $type')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 

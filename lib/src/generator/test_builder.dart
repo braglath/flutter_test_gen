@@ -1,6 +1,6 @@
+import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
 import 'package:flutter_test_gen/src/di/mock_generator.dart';
-import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/resolver/import_resolver.dart';
 import 'package:flutter_test_gen/src/templates/test_template.dart';
@@ -75,15 +75,16 @@ class TestBuilder {
       resolver.collectImports(method, sourceFilePath, _imports);
 
       /// Add original source imports
-      for (final import in method.sourceImports) {
-        final path = import.replaceFirst('../', '');
+      final seen = <String>{};
 
-        if (path.startsWith('package:') || path.startsWith('dart:')) {
-          _imports.add("import '$path';");
-        } else {
-          _imports.add(
-            "import '${project.generateImportPath(path)}';",
-          );
+      for (final import in method.sourceImports) {
+        final normalized = project.normalizeImport(
+          import,
+          currentFilePath: sourceFilePath,
+        );
+
+        if (seen.add(normalized)) {
+          _imports.add("import '$normalized';");
         }
       }
 
@@ -108,7 +109,7 @@ class TestBuilder {
 
         if (TestWriter.testExists(existing, method.methodName)) continue;
 
-        tests.write(_generateSingleTest(method));
+        tests.write(generateSingleTest(method));
       }
 
       if (tests.isEmpty) return;
@@ -170,7 +171,7 @@ class TestBuilder {
     );
   }
 
-  String _generateSingleTest(MethodInfo method) {
+  String generateSingleTest(MethodInfo method) {
     if (method.switchCases.isNotEmpty) {
       return _generateSwitchTests(method);
     }
@@ -192,7 +193,7 @@ class TestBuilder {
 
     String expectedValue;
 
-    if (ProjectUtil.isPrimitive(returnType)) {
+    if (project.isPrimitive(returnType)) {
       expectedValue = project.primitiveValueForAssert(returnType);
     } else {
       expectedValue = 'isA<$returnType>()';
@@ -221,7 +222,7 @@ class TestBuilder {
     debugLog('methodInfo: $method');
     debugLog('verifyCall: $verifyCall');
 
-    final testName = ProjectUtil.buildTestName(method, returnType);
+    final testName = project.buildTestName(method, returnType);
 
     return TestTemplates.test(
       name: testName,
@@ -266,21 +267,11 @@ class TestBuilder {
     /// Parameters
     for (final param in method.parameters) {
       /// Enum parameters
-      if (param.isEnum) {
-        buffer.writeln(
-          '      final ${param.name} = ${param.type}.values.first;',
-        );
-      } else {
-        if (ProjectUtil.isSimpleObject(param.type)) {
-          buffer.writeln(
-            '      final ${param.name} = ${param.type}();',
-          );
-        } else {
-          buffer.writeln(
-            '      final ${param.name} = ${project.generateValue(param)};',
-          );
-        }
-      }
+      final value = project.generateValue(param);
+
+      buffer.writeln(
+        '      final ${param.name} = $value;',
+      );
     }
 
     /// Stub dependency calls
@@ -321,8 +312,10 @@ class TestBuilder {
               : dep.type;
         }
 
-        final fields =
-            resolver.resolveConstructorFields(depReturnType, _imports);
+        final fields = resolver.resolveConstructorFields(
+          depReturnType,
+          method.sourceImports.toSet(),
+        );
 
         final value = fields.isEmpty
             ? '$depReturnType()'

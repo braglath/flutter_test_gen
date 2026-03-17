@@ -88,9 +88,9 @@ description: test
     });
 
     test('isPrimitive should detect primitive types', () {
-      expect(ProjectUtil.isPrimitive('String'), true);
-      expect(ProjectUtil.isPrimitive('int'), true);
-      expect(ProjectUtil.isPrimitive('UserService'), false);
+      expect(projectUtil.isPrimitive('String'), true);
+      expect(projectUtil.isPrimitive('int'), true);
+      expect(projectUtil.isPrimitive('UserService'), false);
     });
 
     test('mockReturnValue for Future type', () {

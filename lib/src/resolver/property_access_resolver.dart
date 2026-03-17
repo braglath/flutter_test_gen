@@ -1,6 +1,5 @@
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
-import 'package:analyzer/dart/element/element.dart';
 
 /// Represents a property or method access detected during AST analysis.
 ///
@@ -165,19 +164,19 @@ class PropertyAccessResolver extends RecursiveAstVisitor<void> {
   @override
   void visitMethodInvocation(MethodInvocation node) {
     final target = node.target?.toSource();
-    final method = node.methodName.name;
+    final methodName = node.methodName.name;
 
     if (target != null && dependencyNames.contains(target)) {
       final args =
-          node.argumentList.arguments.map((e) => e.toSource()).toList();
+          node.argumentList.arguments.map((a) => a.toSource()).toList();
 
-      final element = node.methodName.element;
-
-      final returnType = element is ExecutableElement
-          ? element.returnType.getDisplayString()
-          : null;
-
-      accesses.add(PropertyAccessInfo(target, method, args, returnType));
+      accesses.add(
+        PropertyAccessInfo(
+          target,
+          methodName,
+          args,
+        ),
+      );
     }
 
     super.visitMethodInvocation(node);
