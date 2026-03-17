@@ -87,7 +87,7 @@ class TestGenerator {
       filePath,
     );
 
-    final engine = TestWriter(project);
+    final engine = TestWriter();
 
     final result = engine.process(
       file: file,

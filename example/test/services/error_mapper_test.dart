@@ -17,6 +17,17 @@ void main() {
       // Assert
       expect(result, local.invalidUser);
     });
-    
+    test('map handles UserBlocked', () {
+      // Arrange
+      final error = UserBlocked();
+      final local = AppLocal();
+      final service = ErrorMapper(error);
+
+      // Act
+      final result = service.map(local);
+
+      // Assert
+      expect(result, "User blocked");
+    });
   });
 }

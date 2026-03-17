@@ -1,9 +1,12 @@
 import 'package:flutter_test_gen/flutter_test_gen.dart';
-import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
 import 'package:flutter_test_gen/src/analyzer/import/import_resolver.dart';
+import 'package:flutter_test_gen/src/generator/test/core/arrange_builder.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/models/test_case.dart';
+import 'package:flutter_test_gen/src/utils/naming_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
+import 'package:flutter_test_gen/src/utils/test_utils.dart';
+import 'package:flutter_test_gen/src/utils/type_utils.dart';
 
 class TestCaseBuilder {
   final ImportResolver resolver;
@@ -16,7 +19,8 @@ class TestCaseBuilder {
       return _buildSwitchTestCases(method);
     }
 
-    final arrange = _generateArrange(method);
+    final arrange = ArrangeBuilder(project).build(method);
+
     final params = _generateCallParams(method);
 
     final call = method.className == '__top_level__'
@@ -25,9 +29,9 @@ class TestCaseBuilder {
             ? '${method.className}.${method.methodName}($params)'
             : 'service.${method.methodName}($params)';
 
-    String returnType = method.returnType.replaceAll('?', '');
+    String returnType = TypeUtils.unwrap(method.returnType);
 
-    if (returnType.startsWith('Future<')) {
+    if (TypeUtils.isFuture(returnType)) {
       returnType = returnType.replaceFirst('Future<', '').replaceFirst('>', '');
     }
 
@@ -44,7 +48,7 @@ class TestCaseBuilder {
           arrange: arrange,
           call: call,
           expectedValue: expectedValue,
-          isAsync: method.isAsync,
+          isAsync: TestUtils.needsAsync(method),
           isVoid: method.isVoid,
           verifyCall: verifyCall,
         ),
@@ -95,79 +99,81 @@ class TestCaseBuilder {
     return buffer.toString();
   }
 
-  String _generateArrange(MethodInfo method) {
-    final buffer = StringBuffer();
+  // String _generateArrange(MethodInfo method) {
+  //   final buffer = StringBuffer();
 
-    /// Parameters
-    for (final param in method.parameters) {
-      final value = project.generateValue(param);
-      buffer.writeln('    final ${param.name} = $value;');
-    }
+  //   /// Parameters
+  //   for (final param in method.parameters) {
+  //     final value = project.generateValue(param);
+  //     buffer.writeln('    final ${param.name} = $value;');
+  //   }
 
-    /// Mock stubbing
-    final seen = <String>{};
+  //   /// Mock stubbing
+  //   final seen = <String>{};
 
-    for (final access in method.propertyAccesses) {
-      final key = '${access.target}.${access.property}';
-      if (!seen.add(key)) continue;
+  //   for (final access in method.propertyAccesses) {
+  //     final key = '${access.target}.${access.property}';
+  //     if (!seen.add(key)) continue;
 
-      final dep = method.constructorDependencies.firstWhere(
-        (d) => d.name == access.target,
-        orElse: () => Dependency('', ''),
-      );
+  //     final dep = method.constructorDependencies.firstWhere(
+  //       (d) => d.name == access.target,
+  //       orElse: () => Dependency('', ''),
+  //     );
 
-      if (dep.name.isEmpty) continue;
+  //     if (dep.name.isEmpty) continue;
 
-      final mockVar = _mockVar(dep.name);
-      final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
+  //     final mockVar = NamingUtils.mockVar(dep.name);
+  //     final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
 
-      String returnType = access.returnType ?? '';
+  //     String returnType = access.returnType ?? '';
 
-      final isAsync =
-          access.returnType?.startsWith('Future<') == true || method.isAsync;
+  //     final needAsync = TestUtils.needsAsync(method);
 
-      if (!isAsync && method.isAsync) {
-        returnType = 'Future<$returnType>';
-      }
+  //     final isAsync =
+  //         access.returnType?.startsWith('Future<') == true || needAsync;
 
-      if (returnType.isEmpty || returnType == 'dynamic') {
-        if (dep.type.endsWith('Repository')) {
-          returnType = dep.type.replaceAll('Repository', '');
-        }
-      }
+  //     if (!isAsync && needAsync) {
+  //       returnType = 'Future<$returnType>';
+  //     }
 
-      final inner = returnType.startsWith('Future<')
-          ? returnType.replaceFirst('Future<', '').replaceFirst('>', '')
-          : returnType;
+  //     if (returnType.isEmpty || returnType == 'dynamic') {
+  //       if (dep.type.endsWith('Repository')) {
+  //         returnType = dep.type.replaceAll('Repository', '');
+  //       }
+  //     }
 
-      if (isAsync) {
-        final fields = resolver.resolveConstructorFields(
-          inner,
-          method.sourceImports.toSet(),
-        );
+  //     final inner = returnType.startsWith('Future<')
+  //         ? returnType.replaceFirst('Future<', '').replaceFirst('>', '')
+  //         : returnType;
 
-        final value = project.isPrimitive(inner)
-            ? project.primitiveValueForMock(inner)
-            : fields.isEmpty
-                ? '$inner()'
-                : project.buildObject(inner, fields);
+  //     if (isAsync) {
+  //       final fields = resolver.resolveConstructorFields(
+  //         inner,
+  //         method.sourceImports.toSet(),
+  //       );
 
-        buffer.writeln(
-          '    when(() => $mockVar.${access.property}$args)'
-          '.thenAnswer((_) async => $value);',
-        );
-      } else {
-        final value = project.primitiveValueForMock(inner);
+  //       final value = project.isPrimitive(inner)
+  //           ? project.primitiveValueForMock(inner)
+  //           : fields.isEmpty
+  //               ? '$inner()'
+  //               : project.buildObject(inner, fields);
 
-        buffer.writeln(
-          '    when(() => $mockVar.${access.property}$args)'
-          '.thenReturn($value);',
-        );
-      }
-    }
+  //       buffer.writeln(
+  //         '    when(() => $mockVar.${access.property}$args)'
+  //         '.thenAnswer((_) async => $value);',
+  //       );
+  //     } else {
+  //       final value = project.primitiveValueForMock(inner);
 
-    return buffer.toString();
-  }
+  //       buffer.writeln(
+  //         '    when(() => $mockVar.${access.property}$args)'
+  //         '.thenReturn($value);',
+  //       );
+  //     }
+  //   }
+
+  //   return buffer.toString();
+  // }
 
   String _buildVerify(MethodInfo method) {
     final buffer = StringBuffer();
@@ -175,7 +181,7 @@ class TestCaseBuilder {
     for (final access in method.propertyAccesses) {
       for (final dep in method.constructorDependencies) {
         if (access.target == dep.name) {
-          final mockVar = _mockVar(dep.name);
+          final mockVar = NamingUtils.mockVar(dep.name);
           final args = access.args.isEmpty ? '' : '(${access.args.join(', ')})';
 
           buffer.writeln(
@@ -192,11 +198,6 @@ class TestCaseBuilder {
         if (p.isNamed) return '${p.name}: ${p.name}';
         return p.name;
       }).join(', ');
-
-  String _mockVar(String name) {
-    final cap = name[0].toUpperCase() + name.substring(1);
-    return 'mock$cap';
-  }
 
   // String _generateSwitchTests(MethodInfo method) {
   //   final buffer = StringBuffer();

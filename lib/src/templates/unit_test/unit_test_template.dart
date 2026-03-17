@@ -1,4 +1,5 @@
 import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
+import 'package:flutter_test_gen/src/utils/naming_utils.dart';
 
 /// Provides reusable templates for generating Flutter unit test code.
 ///
@@ -49,13 +50,14 @@ $tests
 
     /// Initialize mocks
     final mockInitializers = dependencies.map((d) {
-      final mockVar = _mockVar(d.name);
+      final mockVar = NamingUtils.mockVar(d.name);
       return '      $mockVar = Mock${d.type}();';
     }).join('\n');
 
     /// Constructor arguments
-    final constructorArgs =
-        constructorDependencies.map((d) => _mockVar(d.name)).join(', ');
+    final constructorArgs = constructorDependencies
+        .map((d) => NamingUtils.mockVar(d.name))
+        .join(', ');
 
     /// Declare service only if needed
     final serviceDeclaration =
@@ -168,10 +170,5 @@ $mockVariables
 $groups
 }
 """;
-  }
-
-  static String _mockVar(String name) {
-    final cap = name[0].toUpperCase() + name.substring(1);
-    return 'mock$cap';
   }
 }

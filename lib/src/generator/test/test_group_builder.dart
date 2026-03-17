@@ -3,7 +3,7 @@ import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dar
 import 'package:flutter_test_gen/src/generator/test/test_case_builder.dart';
 import 'package:flutter_test_gen/src/templates/unit_test/unit_test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
-import 'package:flutter_test_gen/src/writer/test_writer.dart';
+import 'package:flutter_test_gen/src/utils/test_utils.dart';
 
 class TestGroupBuilder {
   final ProjectUtil project;
@@ -21,7 +21,6 @@ class TestGroupBuilder {
 
     for (final method in methods) {
       if (_shouldSkip(method)) continue;
-      if (TestWriter.testExists(existing, method.methodName)) continue;
 
       final testCases = caseBuilder.build(method);
 
@@ -30,7 +29,7 @@ class TestGroupBuilder {
           UnitTestTemplates.test(
             name: testCase.description,
             body: testCase.body,
-            isAsync: method.isAsync,
+            isAsync: TestUtils.needsAsync(method),
           ),
         );
       }
