@@ -111,38 +111,13 @@ $tests
   /// - Void methods include a placeholder comment for verifying side effects.
   static String test({
     required String name,
-    required String arrange,
-    required String call,
-    required String expectedValue,
-    required String verifyCall,
-    required bool isAsync,
-    required bool isVoid,
-  }) {
-    final asyncKeyword = isAsync ? 'async' : '';
-    final awaitKeyword = isAsync ? 'await ' : '';
-
-    final actLine = isVoid
-        ? '      $awaitKeyword$call;'
-        : '      final result = $awaitKeyword$call;';
-
-    final assertLogic = isVoid
-        ? '      // verify side effects'
-        : '      expect(result, $expectedValue);';
-
-    final verifyBlock = verifyCall.trim().isEmpty ? '' : '\n\n$verifyCall';
-
-    return """
-    test('$name', () $asyncKeyword {
-      // Arrange
-$arrange
-      // Act
-$actLine
-
-      // Assert
-$assertLogic$verifyBlock
-    });
+    required String body,
+  }) =>
+      """
+  test('$name', () async {
+$body
+  });
 """;
-  }
 
   /// Generates a complete Flutter test file.
   ///

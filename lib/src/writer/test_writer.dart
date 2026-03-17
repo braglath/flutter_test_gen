@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test_gen/src/generator/test/test_case_builder.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
+import 'package:flutter_test_gen/src/templates/unit_test/unit_test_template.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 /// Responsible for writing or updating generated test files.
@@ -72,6 +73,7 @@ class TestWriter {
 
     var updated = existing;
     bool changed = false;
+    final caseBuilder = TestCaseBuilder(project);
 
     for (final method in methods) {
       if (_shouldSkip(method)) continue;
@@ -84,9 +86,11 @@ class TestWriter {
           ? 'Functions ($cleanPath)'
           : '${method.className} ($cleanPath)';
 
-      final builder = TestBuilder(project);
-      final testCode = builder.generateSingleTest(
-        method,
+      final testCase = caseBuilder.build(method);
+
+      final testCode = UnitTestTemplates.test(
+        name: testCase.description,
+        body: testCase.body,
       );
 
       /// Existing group

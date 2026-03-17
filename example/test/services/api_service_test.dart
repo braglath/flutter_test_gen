@@ -11,8 +11,6 @@ void main() {
     });
 
     test('fetchUser', () async {
-      // Arrange
-
       // Act
       final result = await service.fetchUser();
 

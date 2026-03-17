@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:flutter_test_gen_example/utils/string_utils.dart';
 
 void main() {
   group('Functions (utils/string_utils.dart)', () {
-    test('returns string when capitalize succeeds', () {
+    test('returns string when capitalize succeeds', () async {
       // Arrange
-      const value = 'test';
+      final value = 'test';
 
       // Act
       final result = capitalize(value);
@@ -14,9 +15,9 @@ void main() {
       expect(result, 'test');
     });
 
-    test('returns bool when isLong succeeds', () {
+    test('returns bool when isLong succeeds', () async {
       // Arrange
-      const text = 'test';
+      final text = 'test';
 
       // Act
       final result = isLong(text);
