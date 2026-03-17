@@ -1,4 +1,4 @@
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
 
 /// Generates mock classes and variables for detected dependencies.
 ///

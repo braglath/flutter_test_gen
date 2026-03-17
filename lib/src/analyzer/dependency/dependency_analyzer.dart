@@ -1,41 +1,34 @@
+// ignore_for_file: file_names
+
 import 'package:analyzer/dart/ast/ast.dart';
 
 /// Represents a dependency injected into a class through its constructor.
-///
-/// Each dependency contains the parameter [name] used in the constructor
-/// and its corresponding Dart [type].
 class Dependency {
-  /// The name of the dependency parameter.
   final String name;
-
-  /// The Dart type of the dependency.
   final String type;
 
-  /// Creates a new [Dependency] with the given [name] and [type].
   Dependency(this.name, this.type);
 }
 
-/// Utility class responsible for resolving constructor dependencies
-/// from a Dart class using the analyzer AST.
+/// Analyzes a class and extracts only the dependencies
+/// that should be mocked in tests.
 ///
-/// This is mainly used for detecting injected dependencies so that
-/// corresponding mock objects can be generated for unit tests.
-class DependencyResolver {
-  /// Extracts constructor dependencies from the given [clazz].
-  ///
-  /// This method inspects all constructors of the class and collects
-  /// parameters that represent injected dependencies.
-  ///
-  /// Supported constructor patterns:
-  /// - `Constructor(Type repository)`
-  /// - `Constructor(this.repository)`
-  /// - Named parameters
-  ///
-  /// Primitive types (such as `int`, `String`, etc.) are ignored because
-  /// they are typically not mocked in unit tests.
-  ///
-  /// Returns a list of detected [Dependency] objects.
-  static List<Dependency> resolve(ClassDeclaration clazz) {
+/// Responsibilities:
+/// - Extract constructor dependencies
+/// - Filter primitives
+/// - Filter sealed classes
+class DependencyAnalyzer {
+  /// Main entry point
+  static List<Dependency> analyze(
+    ClassDeclaration clazz,
+    CompilationUnit unit,
+  ) {
+    final rawDeps = _extract(clazz);
+    return _filter(rawDeps, unit);
+  }
+
+  /// STEP 1: Extract dependencies from constructor
+  static List<Dependency> _extract(ClassDeclaration clazz) {
     final dependencies = <Dependency>[];
     final seen = <String>{};
 
@@ -92,6 +85,23 @@ class DependencyResolver {
     return dependencies;
   }
 
+  /// STEP 2: Filter dependencies
+  static List<Dependency> _filter(
+    List<Dependency> deps,
+    CompilationUnit unit,
+  ) {
+    final result = <Dependency>[];
+
+    for (final dep in deps) {
+      if (_isPrimitive(dep.type)) continue;
+      if (_isSealed(dep.type, unit)) continue;
+
+      result.add(dep);
+    }
+
+    return result;
+  }
+
   static bool _valid(String name, String type) =>
       name.isNotEmpty && type.isNotEmpty && !_isPrimitive(type);
 
@@ -120,4 +130,16 @@ class DependencyResolver {
         'dynamic',
         'DateTime',
       }.contains(type);
+
+  static bool _isSealed(String type, CompilationUnit unit) {
+    for (final decl in unit.declarations) {
+      if (decl is ClassDeclaration) {
+        if (decl.name.lexeme == type) {
+          return decl.sealedKeyword != null;
+        }
+      }
+    }
+
+    return false;
+  }
 }

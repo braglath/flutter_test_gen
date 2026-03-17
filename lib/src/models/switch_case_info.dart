@@ -50,6 +50,8 @@ class SwitchCaseInfo {
   /// ```
   final List<String> types;
 
+  Map<String, String> expectedValues;
+
   /// Creates a new [SwitchCaseInfo] instance.
   ///
   /// Parameters:
@@ -58,5 +60,6 @@ class SwitchCaseInfo {
   SwitchCaseInfo({
     required this.variable,
     required this.types,
+    required this.expectedValues,
   });
 }

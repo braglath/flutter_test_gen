@@ -5,13 +5,12 @@ import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/element/element.dart';
-import 'package:flutter_test_gen/src/di/dependency_filter.dart';
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
+import 'package:flutter_test_gen/src/analyzer/type/property_access_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/type/sealed_class_resolver.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/models/parameter_info.dart';
 import 'package:flutter_test_gen/src/models/switch_case_info.dart';
-import 'package:flutter_test_gen/src/resolver/property_access_resolver.dart';
-import 'package:flutter_test_gen/src/resolver/sealed_class_resolver.dart';
 import 'package:path/path.dart' as p;
 
 /// Parses Dart source files and extracts method metadata.
@@ -82,7 +81,7 @@ class DartParser {
     String filePath, // ✅ ADD
   ) {
     if (declaration is ClassDeclaration) {
-      final constructorDeps = DependencyResolver.resolve(declaration);
+      final constructorDeps = DependencyAnalyzer.analyze(declaration, unit);
 
       return _extractMembers(
           containerName: declaration.name.lexeme,
@@ -186,10 +185,6 @@ class DartParser {
   ) {
     final paramDeps = _extractParameterDependencies(member.parameters);
 
-    final constructorFiltered = DependencyFilter.filter(constructorDeps, unit);
-
-    final paramFiltered = DependencyFilter.filter(paramDeps, unit);
-
     final dependencyNames = {
       ...constructorDeps.map((d) => d.name),
       ...paramDeps.map((d) => d.name),
@@ -219,8 +214,8 @@ class DartParser {
           sourceImports,
           filePath,
         ),
-        constructorDependencies: constructorFiltered,
-        parameterDependencies: paramFiltered,
+        constructorDependencies: constructorDeps,
+        parameterDependencies: paramDeps,
         propertyAccesses: propertyAccesses,
         switchCases: [],
         sourceImports: sourceImports);
@@ -228,19 +223,25 @@ class DartParser {
     _detectSwitchCases(member.body, methodInfo);
 
     /// NEW: detect subclasses of sealed dependencies
-    for (final dep in constructorFiltered) {
+    for (final dep in constructorDeps) {
       final subclasses = SealedClassResolver.findSubclasses(
         dep.type,
         unit,
       );
 
       if (subclasses.isNotEmpty) {
-        methodInfo.switchCases.add(
-          SwitchCaseInfo(
-            variable: dep.name,
-            types: subclasses,
-          ),
+        final alreadyExists = methodInfo.switchCases.any(
+          (c) => c.variable == dep.name,
         );
+        if (!alreadyExists) {
+          methodInfo.switchCases.add(
+            SwitchCaseInfo(
+              variable: dep.name,
+              types: subclasses,
+              expectedValues: {},
+            ),
+          );
+        }
       }
     }
 
@@ -275,7 +276,7 @@ class DartParser {
     return deps;
   }
 
-  List<MethodParameter> _parseParameters(
+  List<ParameterInfo> _parseParameters(
     FormalParameterList? parameterList,
     List<String> sourceImports,
     String currentFilePath,
@@ -302,7 +303,7 @@ class DartParser {
         );
       }
 
-      return MethodParameter(
+      return ParameterInfo(
         name: param?.name?.lexeme ?? 'param',
         type: type,
         isNamed: p.isNamed,
@@ -378,6 +379,9 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
+    /// ✅ ADD THIS
+    final expectedValues = <String, String>{};
+
     for (final c in node.cases) {
       final guarded = c.guardedPattern;
       final pattern = guarded.pattern;
@@ -385,6 +389,11 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
       if (pattern is ObjectPattern) {
         final type = pattern.type.toSource();
         types.add(type);
+
+        /// extract RHS value
+        final value = _safeSource(c.expression);
+
+        expectedValues[type] = value;
       }
     }
 
@@ -393,6 +402,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
+          expectedValues: expectedValues, // ✅ PASS IT
         ),
       );
     }
@@ -405,6 +415,9 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
+    /// ✅ ADD
+    final expectedValues = <String, String>{};
+
     for (final member in node.members) {
       if (member is SwitchPatternCase) {
         final pattern = member.guardedPattern.pattern;
@@ -412,6 +425,18 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         if (pattern is ObjectPattern) {
           final type = pattern.type.toSource();
           types.add(type);
+
+          /// 🔥 Extract return from body (if exists)
+          final statements = member.statements;
+
+          if (statements.isNotEmpty) {
+            final stmt = statements.first;
+
+            if (stmt is ReturnStatement) {
+              final value = stmt.expression?.toSource() ?? '';
+              expectedValues[type] = value;
+            }
+          }
         }
       }
     }
@@ -421,10 +446,16 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
+          expectedValues: expectedValues, // ✅ PASS
         ),
       );
     }
 
     super.visitSwitchStatement(node);
+  }
+
+  String _safeSource(Expression? expr) {
+    if (expr == null) return '';
+    return expr.toSource().trim();
   }
 }
