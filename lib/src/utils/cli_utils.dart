@@ -101,6 +101,25 @@ Examples:
     );
   }
 
+  /// Prompts the user to select a file when multiple matches are found.
+  ///
+  /// Displays a numbered list of matching files and reads user input
+  /// from the console to determine the selected file.
+  ///
+  /// Behavior:
+  /// - Prints all matching files with indices
+  /// - Accepts user input for selection
+  /// - Validates the selected index
+  /// - Exits the process if the input is invalid
+  ///
+  /// Parameters:
+  /// - [matches]: List of file paths that matched the search query
+  ///
+  /// Returns:
+  /// The selected file path from the list.
+  ///
+  /// Exits:
+  /// - Terminates the process with exit code `1` if the selection is invalid
   static String selectFile(List<String> matches) {
     print(AnsiStyles.yellow('Multiple files found:\n'));
 

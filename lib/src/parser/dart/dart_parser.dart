@@ -78,7 +78,7 @@ class DartParser {
     CompilationUnitMember declaration,
     CompilationUnit unit,
     List<String> sourceImports,
-    String filePath, // ✅ ADD
+    String filePath, // ADD
   ) {
     if (declaration is ClassDeclaration) {
       final constructorDeps = DependencyAnalyzer.analyze(declaration, unit);
@@ -125,7 +125,7 @@ class DartParser {
     required List<Dependency> dependencies,
     required CompilationUnit unit,
     required List<String> sourceImports,
-    required String filePath, // ✅ add
+    required String filePath, // add
   }) {
     final methods = <MethodInfo>[];
 
@@ -181,7 +181,7 @@ class DartParser {
     List<Dependency> constructorDeps,
     CompilationUnit unit,
     List<String> sourceImports,
-    String filePath, // ✅ add
+    String filePath,
   ) {
     final paramDeps = _extractParameterDependencies(member.parameters);
 
@@ -202,7 +202,7 @@ class DartParser {
 
     final propertyAccesses = resolver.accesses;
 
-    /// NEW: detect sealed class switch patterns
+    /// detect sealed class switch patterns
     final methodInfo = MethodInfo(
         className: className,
         methodName: member.name.lexeme,
@@ -222,7 +222,7 @@ class DartParser {
 
     _detectSwitchCases(member.body, methodInfo);
 
-    /// NEW: detect subclasses of sealed dependencies
+    ///  detect subclasses of sealed dependencies
     for (final dep in constructorDeps) {
       final subclasses = SealedClassResolver.findSubclasses(
         dep.type,
@@ -379,7 +379,6 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
-    /// ✅ ADD THIS
     final expectedValues = <String, String>{};
 
     for (final c in node.cases) {
@@ -402,7 +401,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
-          expectedValues: expectedValues, // ✅ PASS IT
+          expectedValues: expectedValues, 
         ),
       );
     }
@@ -415,7 +414,6 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
     final variable = node.expression.toSource();
     final types = <String>[];
 
-    /// ✅ ADD
     final expectedValues = <String, String>{};
 
     for (final member in node.members) {
@@ -426,7 +424,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
           final type = pattern.type.toSource();
           types.add(type);
 
-          /// 🔥 Extract return from body (if exists)
+          /// Extract return from body (if exists)
           final statements = member.statements;
 
           if (statements.isNotEmpty) {
@@ -446,7 +444,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
-          expectedValues: expectedValues, // ✅ PASS
+          expectedValues: expectedValues,
         ),
       );
     }

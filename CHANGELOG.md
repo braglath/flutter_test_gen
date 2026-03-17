@@ -4,6 +4,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.0.0
+
+🎉 Initial stable release
+
+### ✨ Features
+
+- Generate unit tests for Dart & Flutter code
+- Supports classes, top-level functions, static & instance methods
+- Automatically detects constructor dependencies and generates mocks
+- Handles async methods and verification with mocktail
+- Generates Arrange / Act / Assert structured tests
+- Supports switch / sealed class test generation
+
+### 🧪 Test Generation
+
+- Groups tests by class and file
+- Avoids duplicate test generation
+- Supports:
+  - Append mode (default)
+  - Overwrite mode
+
 ## 0.1.3
 
 - Fixed incorrect mock return generation in append mode (User() → User(name: 'test', age: 1))

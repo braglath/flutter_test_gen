@@ -110,10 +110,6 @@ bool _isPrimitive(String type) => const {
       'DateTime',
     }.contains(type);
 
-// String _capitalize(String value) {
-//   if (value.isEmpty) return value;
-//   return value[0].toUpperCase() + value.substring(1);
-// }
 
 bool _isEnumLike(String type) {
   // enums normally don't end with Repository/Service and don't have generics

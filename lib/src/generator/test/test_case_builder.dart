@@ -9,12 +9,45 @@ import 'package:flutter_test_gen/src/models/test_case.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/utils/type_utils.dart';
 
+/// Builds complete test cases for a given method.
+///
+/// [TestCaseBuilder] orchestrates the generation of structured test cases
+/// by combining different test sections:
+/// - Arrange (setup and mocks)
+/// - Act (method execution)
+/// - Assert (result validation)
+/// - Verify (interaction checks)
+///
+/// It supports:
+/// - Standard method test generation
+/// - Switch-based test case expansion (multiple scenarios)
 class TestCaseBuilder {
+  /// Resolves imports and constructor metadata for complex types.
   final ImportResolver resolver;
+
+  /// Utility for project-level operations such as naming,
+  /// value generation, and object construction.
   final ProjectUtil project;
 
+  /// Creates a [TestCaseBuilder] with the given [project] utilities.
+  ///
+  /// Internally initializes an [ImportResolver] using the same project.
   TestCaseBuilder(this.project) : resolver = ImportResolver(project);
 
+  /// Generates test cases for the given [method].
+  ///
+  /// Behavior:
+  /// - If the method contains switch cases, generates multiple
+  ///   test cases (one per branch).
+  /// - Otherwise, generates a single standard test case.
+  /// - Builds each section using dedicated builders:
+  ///   - [ArrangeBuilder]
+  ///   - [ActBuilder]
+  ///   - [AssertBuilder]
+  ///   - [VerifyBuilder]
+  ///
+  /// Returns:
+  /// A list of [TestCase] objects representing generated tests.
   List<TestCase> build(MethodInfo method) {
     if (method.switchCases.isNotEmpty) {
       return _buildSwitchTestCases(method);

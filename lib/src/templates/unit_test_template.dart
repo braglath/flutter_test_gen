@@ -114,7 +114,7 @@ $tests
   static String test({
     required String name,
     required String body,
-    required bool isAsync, // ✅ ADD THIS
+    required bool isAsync,
   }) {
     final asyncKeyword = isAsync ? 'async ' : '';
 

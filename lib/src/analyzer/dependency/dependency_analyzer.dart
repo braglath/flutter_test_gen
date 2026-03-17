@@ -3,10 +3,22 @@
 import 'package:analyzer/dart/ast/ast.dart';
 
 /// Represents a dependency injected into a class through its constructor.
+/// Represents a dependency required for test generation.
+///
+/// A [Dependency] consists of:
+/// - [name]: The identifier or variable name of the dependency.
+/// - [type]: The Dart type of the dependency (e.g., `String`, `int`, custom class).
+///
+/// This is typically used to construct mock objects or initialize
+/// required parameters when generating test cases.
 class Dependency {
+  /// The identifier or variable name of the dependency.
   final String name;
+
+  /// The Dart type of the dependency.
   final String type;
 
+  /// Creates a new [Dependency] with the given [name] and [type].
   Dependency(this.name, this.type);
 }
 
@@ -27,7 +39,7 @@ class DependencyAnalyzer {
     return _filter(rawDeps, unit);
   }
 
-  /// STEP 1: Extract dependencies from constructor
+  /// Extract dependencies from constructor
   static List<Dependency> _extract(ClassDeclaration clazz) {
     final dependencies = <Dependency>[];
     final seen = <String>{};
@@ -85,7 +97,7 @@ class DependencyAnalyzer {
     return dependencies;
   }
 
-  /// STEP 2: Filter dependencies
+  /// Filter dependencies
   static List<Dependency> _filter(
     List<Dependency> deps,
     CompilationUnit unit,

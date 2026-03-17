@@ -65,7 +65,6 @@ class ProjectUtil {
 
     debugLog('filePath (input): $filePath');
 
-    // ✅ Already correct
     if (filePath.startsWith('package:')) {
       return filePath;
     }
@@ -74,7 +73,6 @@ class ProjectUtil {
       return filePath;
     }
 
-    // ✅ Resolve relative ONLY if needed
     if (!p.isAbsolute(filePath)) {
       if (currentFilePath == null) {
         throw ArgumentError(
@@ -88,7 +86,6 @@ class ProjectUtil {
       debugLog('filePath (resolved): $filePath');
     }
 
-    // ✅ Convert to project-relative
     if (filePath.startsWith(_projectRoot)) {
       filePath = p.relative(filePath, from: _projectRoot);
     }

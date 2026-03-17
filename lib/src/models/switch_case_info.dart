@@ -1,12 +1,12 @@
 /// Represents information about a detected switch pattern case.
 ///
-/// [SwitchCaseInfo] is produced by the parser when a method contains a
-/// `switch` expression or `switch` statement that performs pattern matching
-/// on a variable.
+/// [SwitchCaseInfo] is produced by the analyzer when a method contains a
+/// `switch` expression or statement that performs pattern matching.
 ///
 /// It stores:
 /// - the variable being evaluated in the switch
-/// - the concrete types used in the pattern cases
+/// - the concrete types used in pattern cases
+/// - the expected return values mapped to each type
 ///
 /// Example source code:
 /// ```dart
@@ -22,11 +22,15 @@
 /// SwitchCaseInfo(
 ///   variable: 'error',
 ///   types: ['UserNotFound', 'UserBlocked'],
+///   expectedValues: {
+///     'UserNotFound': 'local.invalidUser',
+///     'UserBlocked': '"User blocked"',
+///   },
 /// )
 /// ```
 ///
 /// This information allows the test generator to automatically produce
-/// individual tests for each detected switch case type.
+/// individual test cases for each detected switch branch.
 class SwitchCaseInfo {
   /// The variable used in the `switch` expression.
   ///
@@ -50,13 +54,28 @@ class SwitchCaseInfo {
   /// ```
   final List<String> types;
 
+  /// A mapping of each type to its expected return value.
+  ///
+  /// The key represents the matched type and the value represents
+  /// the corresponding expression returned in that case.
+  ///
+  /// Example:
+  /// ```dart
+  /// {
+  ///   'UserNotFound': 'local.invalidUser',
+  ///   'UserBlocked': '"User blocked"',
+  /// }
+  /// ```
+  ///
+  /// This is used to generate precise assertions for each test case.
   Map<String, String> expectedValues;
 
   /// Creates a new [SwitchCaseInfo] instance.
   ///
   /// Parameters:
   /// - [variable]: The variable being switched on.
-  /// - [types]: The list of concrete pattern types detected in the switch.
+  /// - [types]: The list of concrete pattern types detected.
+  /// - [expectedValues]: Mapping of types to expected return values.
   SwitchCaseInfo({
     required this.variable,
     required this.types,
