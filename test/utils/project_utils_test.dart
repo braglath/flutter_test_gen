@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
+import 'package:flutter_test_gen/src/models/parameter_info.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:test/test.dart';
 
@@ -60,7 +60,7 @@ description: test
     });
 
     test('generateValue should generate primitive values', () {
-      final param = const MethodParameter(
+      final param = const ParameterInfo(
         name: 'age',
         type: 'int',
       );
@@ -71,7 +71,7 @@ description: test
     });
 
     test('generateValue should generate enum default value', () {
-      final param = const MethodParameter(
+      final param = const ParameterInfo(
         name: 'gender',
         type: 'UserGender',
       );

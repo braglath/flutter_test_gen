@@ -1,5 +1,5 @@
 import 'package:flutter_test_gen/src/utils/cli_utils.dart';
-import 'package:flutter_test_gen/src/utils/logger_utils.dart';
+import 'package:flutter_test_gen/src/utils/logger.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty ||

@@ -1,10 +1,10 @@
 /// Represents a parameter of a method discovered during source analysis.
 ///
-/// [MethodParameter] stores metadata about a method argument such as
+/// [ParameterInfo] stores metadata about a method argument such as
 /// its name, type, and whether it is a named parameter or an enum.
 /// This information is used by the test generator to create appropriate
 /// input values when generating unit tests.
-class MethodParameter {
+class ParameterInfo {
   /// The name of the method parameter.
   final String name;
 
@@ -31,18 +31,18 @@ class MethodParameter {
   /// when creating test input data.
   final bool isEnum;
 
-  /// Creates a new [MethodParameter] describing a method argument.
+  /// Creates a new [ParameterInfo] describing a method argument.
   ///
   /// The [name] and [type] are required. Optional flags indicate whether
   /// the parameter is named or represents an enum type.
-  const MethodParameter({
+  const ParameterInfo({
     required this.name,
     required this.type,
     this.isNamed = false,
     this.isEnum = false,
   });
 
-  /// Creates a copy of this [MethodParameter] with updated values.
+  /// Creates a copy of this [ParameterInfo] with updated values.
   ///
   /// Any provided parameter will replace the corresponding value,
   /// while omitted parameters will keep the current value.
@@ -51,13 +51,13 @@ class MethodParameter {
   /// ```dart
   /// final updated = param.copyWith(isNamed: true);
   /// ```
-  MethodParameter copyWith({
+  ParameterInfo copyWith({
     String? name,
     String? type,
     bool? isNamed,
     bool? isEnum,
   }) =>
-      MethodParameter(
+      ParameterInfo(
         name: name ?? this.name,
         type: type ?? this.type,
         isNamed: isNamed ?? this.isNamed,

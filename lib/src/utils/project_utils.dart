@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
-import 'package:flutter_test_gen/src/generator/type_value_generator.dart';
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
-import 'package:flutter_test_gen/src/utils/logger_utils.dart';
+import 'package:flutter_test_gen/src/analyzer/type/type_value_generator.dart';
+import 'package:flutter_test_gen/src/models/parameter_info.dart';
+import 'package:flutter_test_gen/src/utils/logger.dart';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
 
@@ -183,7 +183,7 @@ class ProjectUtil {
   /// For enum types, the first enum value is used.
   ///
   /// This helps create valid input values in generated tests.
-  String generateValue(MethodParameter param) {
+  String generateValue(ParameterInfo param) {
     final generatedString = TypeValueGenerator.generate(
       param.type,
       isEnum: param.isEnum,

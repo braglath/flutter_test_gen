@@ -1,15 +1,15 @@
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
 
 /// Provides reusable templates for generating Flutter unit test code.
 ///
-/// [TestTemplates] is responsible for producing structured test code such as:
+/// [UnitTestTemplates] is responsible for producing structured test code such as:
 /// - test groups
 /// - individual test cases
 /// - complete test files
 ///
 /// These templates are used by the test generator to convert analyzed
 /// source code metadata into runnable Flutter tests.
-class TestTemplates {
+class UnitTestTemplates {
   /// Generates a `group()` block for a class or top-level functions.
   ///
   /// This method creates the test group structure and optionally generates:

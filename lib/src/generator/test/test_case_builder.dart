@@ -1,10 +1,10 @@
 import 'package:flutter_test_gen/flutter_test_gen.dart';
-import 'package:flutter_test_gen/src/di/dependency_resolver.dart';
-import 'package:flutter_test_gen/src/di/mock_generator.dart';
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
-import 'package:flutter_test_gen/src/resolver/import_resolver.dart';
-import 'package:flutter_test_gen/src/templates/test_template.dart';
-import 'package:flutter_test_gen/src/utils/logger_utils.dart';
+import 'package:flutter_test_gen/src/analyzer/dependency/dependency_analyzer.dart';
+import 'package:flutter_test_gen/src/analyzer/import/import_resolver.dart';
+import 'package:flutter_test_gen/src/generator/mock/mock_generator.dart';
+import 'package:flutter_test_gen/src/models/parameter_info.dart';
+import 'package:flutter_test_gen/src/templates/unit_test/unit_test_template.dart';
+import 'package:flutter_test_gen/src/utils/logger.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/writer/test_writer.dart';
 
@@ -126,7 +126,7 @@ class TestBuilder {
 
       final cleanPath = relativePath.replaceFirst('lib/', '');
 
-      groups.write(TestTemplates.group(
+      groups.write(UnitTestTemplates.group(
         groupName: className == '__top_level__'
             ? 'Functions ($cleanPath)'
             : '$className ($cleanPath)',
@@ -162,7 +162,7 @@ class TestBuilder {
 
     final importList = _imports.toList()..sort();
 
-    return TestTemplates.file(
+    return UnitTestTemplates.file(
       importPath: importPath,
       imports: importList.join('\n'),
       mocks: mockClasses,
@@ -195,7 +195,7 @@ class TestBuilder {
   /// - Builds a readable test name using [project.buildTestName]
   ///
   /// Returns:
-  /// A formatted test case string using [TestTemplates.test].
+  /// A formatted test case string using [UnitTestTemplates.test].
   ///
   /// Notes:
   /// - Supports async and void methods
@@ -254,7 +254,7 @@ class TestBuilder {
 
     final testName = project.buildTestName(method, returnType);
 
-    return TestTemplates.test(
+    return UnitTestTemplates.test(
       name: testName,
       arrange: arrange,
       call: call,
@@ -314,7 +314,7 @@ class TestBuilder {
       /// Only stub constructor dependencies
       final isConstructorDependency = method.constructorDependencies.any(
           (dep) =>
-              dep.type.toLowerCase().contains(access.target.toLowerCase()));
+              dep!.type.toLowerCase().contains(access.target.toLowerCase()));
 
       if (!isConstructorDependency) continue;
 
@@ -361,7 +361,7 @@ class TestBuilder {
     return buffer.toString();
   }
 
-  String _generateCallParams(List<MethodParameter> params) => params.map((p) {
+  String _generateCallParams(List<ParameterInfo> params) => params.map((p) {
         if (p.isNamed) return '${p.name}: ${p.name}';
         return p.name;
       }).join(', ');

@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:ansi_styles/ansi_styles.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:flutter_test_gen/src/generator/test_builder.dart';
-import 'package:flutter_test_gen/src/parser/dart_parser.dart';
+import 'package:flutter_test_gen/src/generator/test/test_case_builder.dart';
+import 'package:flutter_test_gen/src/parser/dart/dart_parser.dart';
 import 'package:flutter_test_gen/src/utils/path_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/writer/test_writer.dart';

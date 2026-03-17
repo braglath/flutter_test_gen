@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_test_gen/src/generator/test_builder.dart';
+import 'package:flutter_test_gen/src/generator/test/test_case_builder.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
