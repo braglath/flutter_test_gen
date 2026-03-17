@@ -301,7 +301,7 @@ class ProjectUtil {
   /// ```dart
   /// final value = primitiveValueForMock('int'); // returns '1'
   /// ```
-   String primitiveValueForMock(String type) {
+  String primitiveValueForMock(String type) {
     if (type.startsWith('Future<')) {
       final inner = type.replaceFirst('Future<', '').replaceFirst('>', '');
       return primitiveValueForMock(inner);

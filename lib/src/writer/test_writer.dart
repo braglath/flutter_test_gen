@@ -14,7 +14,23 @@ import 'package:flutter_test_gen/src/utils/project_utils.dart';
 /// It also ensures duplicate tests are not generated and restores
 /// missing imports when updating test files.
 class TestWriter {
+  /// Utility instance providing project-specific helpers and configurations.
+  ///
+  /// Used for:
+  /// - Identifying primitive types
+  /// - Generating expected assertion values
+  /// - Constructing standardized test names
   final ProjectUtil project;
+
+  /// Creates a [TestWriter] with the given [project] configuration.
+  ///
+  /// Parameters:
+  /// - [project]: The project utility used to customize test generation behavior.
+  ///
+  /// Example:
+  /// ```dart
+  /// final writer = TestWriter(ProjectUtil());
+  /// ```
   TestWriter(this.project);
 
   /// Processes test generation and returns the updated test content.

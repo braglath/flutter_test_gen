@@ -171,6 +171,36 @@ class TestBuilder {
     );
   }
 
+  /// Generates a unit test string for a given [MethodInfo].
+  ///
+  /// This method builds a complete test case by:
+  /// - Handling `switch`-based methods separately.
+  /// - Preparing the **arrange** section using [_generateArrange].
+  /// - Constructing the method call with correct invocation:
+  ///   - Top-level functions
+  ///   - Static methods
+  ///   - Instance methods (via `service`)
+  /// - Resolving the return type:
+  ///   - Unwrapping `Future<T>` if async
+  ///   - Removing nullability (`?`)
+  /// - Generating an appropriate expected value:
+  ///   - Primitive types → concrete values (via [project.primitiveValueForAssert])
+  ///   - Non-primitive types → `isA<T>()` matcher
+  /// - Verifying interactions with mocked dependencies:
+  ///   - Detects property/method accesses on constructor dependencies
+  ///   - Generates `verify(...).called(1)` assertions
+  ///
+  /// Additionally:
+  /// - Logs debug information for method and verification generation
+  /// - Builds a readable test name using [project.buildTestName]
+  ///
+  /// Returns:
+  /// A formatted test case string using [TestTemplates.test].
+  ///
+  /// Notes:
+  /// - Supports async and void methods
+  /// - Automatically adapts assertions based on return type
+  /// - Integrates with mock verification for dependency interactions
   String generateSingleTest(MethodInfo method) {
     if (method.switchCases.isNotEmpty) {
       return _generateSwitchTests(method);
