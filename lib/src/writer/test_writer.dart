@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test_gen/src/generator/test_builder.dart';
 import 'package:flutter_test_gen/src/models/method_info.dart';
-import 'package:flutter_test_gen/src/models/method_parameter.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 
 /// Responsible for writing or updating generated test files.
@@ -324,17 +323,17 @@ class TestWriter {
   //   return buffer.toString();
   // }
 
-  String _generateCallParams(List<MethodParameter> params) {
-    if (params.isEmpty) return '';
+  // String _generateCallParams(List<MethodParameter> params) {
+  //   if (params.isEmpty) return '';
 
-    return params.map((p) {
-      if (p.isNamed) return '${p.name}: ${p.name}';
-      return p.name;
-    }).join(', ');
-  }
+  //   return params.map((p) {
+  //     if (p.isNamed) return '${p.name}: ${p.name}';
+  //     return p.name;
+  //   }).join(', ');
+  // }
 
-  String _mockVar(String name) {
-    final cap = name[0].toUpperCase() + name.substring(1);
-    return 'mock$cap';
-  }
+  // String _mockVar(String name) {
+  //   final cap = name[0].toUpperCase() + name.substring(1);
+  //   return 'mock$cap';
+  // }
 }
