@@ -401,7 +401,7 @@ class _SwitchVisitor extends RecursiveAstVisitor<void> {
         SwitchCaseInfo(
           variable: variable,
           types: types,
-          expectedValues: expectedValues, 
+          expectedValues: expectedValues,
         ),
       );
     }

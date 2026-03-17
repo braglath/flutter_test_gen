@@ -110,7 +110,6 @@ bool _isPrimitive(String type) => const {
       'DateTime',
     }.contains(type);
 
-
 bool _isEnumLike(String type) {
   // enums normally don't end with Repository/Service and don't have generics
   if (type.contains('<')) return false;
