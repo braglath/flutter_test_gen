@@ -41,6 +41,7 @@ class FileResolver {
     final fullPath =
         isAbsolute ? input : '$root${Platform.pathSeparator}$input';
 
+    /// direct match
     final entityType = FileSystemEntity.typeSync(fullPath);
 
     if (entityType == FileSystemEntityType.file ||
@@ -48,6 +49,16 @@ class FileResolver {
       return fullPath;
     }
 
+    /// NEW: check inside lib/
+    final libFolderPath = path.join(root, 'lib', input);
+
+    final folderType = FileSystemEntity.typeSync(libFolderPath);
+
+    if (folderType == FileSystemEntityType.directory) {
+      return libFolderPath;
+    }
+
+    /// fallback to file search
     final dartInput = input.endsWith('.dart') ? input : '$input.dart';
 
     final matches = CliUtils.findFiles(dartInput);

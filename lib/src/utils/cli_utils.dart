@@ -64,7 +64,7 @@ class CliUtils {
     } else {
       print(
         AnsiStyles.red(
-          '\n❌ Invalid path: $filePath\n',
+          '\nX Invalid path: $filePath\n',
         ),
       );
       exit(1);
