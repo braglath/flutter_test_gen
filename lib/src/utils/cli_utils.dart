@@ -35,24 +35,65 @@ class CliUtils {
     }
 
     final options = CliOptions.fromArgs(args);
-    final fileName = CliUtils.normalizeFileName(options.input);
 
-    final filePath = FileResolver.resolve(fileName);
+    final filePath = FileResolver.resolve(options.input);
+    final entityType = FileSystemEntity.typeSync(filePath);
 
-    print(
-      AnsiStyles.cyan(
-        '\n🚀 Generating tests for ${relativePath(filePath)}\n',
-      ),
-    );
+    if (entityType == FileSystemEntityType.file) {
+      print(AnsiStyles.cyan('→ ${relativePath(filePath)}'));
+    } else if (entityType == FileSystemEntityType.directory) {
+      print(AnsiStyles.cyan('📂 ${relativePath(filePath)}'));
+    }
 
     final generator = TestGenerator();
 
-    await generator.generate(
-      filePath,
-      append: options.append,
-      overwrite: options.overwrite,
-    );
+    if (entityType == FileSystemEntityType.file) {
+      await _generateForFile(
+        generator: generator,
+        filePath: filePath,
+        append: options.append,
+        overwrite: options.overwrite,
+      );
+    } else if (entityType == FileSystemEntityType.directory) {
+      await _generateForDirectory(
+        generator: generator,
+        filePath: filePath,
+        append: options.append,
+        overwrite: options.overwrite,
+      );
+    } else {
+      print(
+        AnsiStyles.red(
+          '\n❌ Invalid path: $filePath\n',
+        ),
+      );
+      exit(1);
+    }
   }
+
+  static Future<void> _generateForFile({
+    required String filePath,
+    required TestGenerator generator,
+    required bool append,
+    required bool overwrite,
+  }) async =>
+      await generator.generate(
+        filePath,
+        append: append,
+        overwrite: overwrite,
+      );
+
+  static Future<void> _generateForDirectory({
+    required String filePath,
+    required TestGenerator generator,
+    required bool append,
+    required bool overwrite,
+  }) async =>
+      await generator.generateForDirectory(
+        filePath,
+        append: append,
+        overwrite: overwrite,
+      );
 
   /// Prints the CLI help message.
   ///
@@ -159,21 +200,6 @@ Examples:
     }
 
     return absolutePath;
-  }
-
-  /// Normalizes a file name provided through CLI arguments.
-  ///
-  /// If the provided [input] does not include the `.dart` extension,
-  /// it will be automatically appended.
-  ///
-  /// Example:
-  /// `user_service` → `user_service.dart`
-  static String normalizeFileName(String input) {
-    if (input.endsWith('.dart')) {
-      return input;
-    }
-
-    return '$input.dart';
   }
 
   /// Searches for Dart files matching [fileName] inside the project.
