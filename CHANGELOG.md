@@ -4,6 +4,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.1.0
+
+### Features
+
+- Generate tests for all Dart files inside a directory (recursive)
+
+### Improvements
+
+- Cleaner CLI output and logging
+- Improved path resolution
+
+### Fixes
+
+- Fixed directory detection issues
+- Fixed duplicate test file naming
+- Fixed conflicting CLI flags
+
 ## 1.0.0
 
 🎉 Initial stable release

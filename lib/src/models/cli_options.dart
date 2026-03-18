@@ -45,6 +45,10 @@ class CliOptions {
     final overwrite = args.contains('--overwrite');
     final append = args.contains('--append');
 
+    if (append && overwrite) {
+      throw Exception('Cannot use --append and --overwrite together');
+    }
+
     return CliOptions(
       input: args.first,
       append: append || !overwrite,
