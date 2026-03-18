@@ -41,7 +41,7 @@ class CliUtils {
     final entityType = FileSystemEntity.typeSync(filePath);
 
     if (entityType == FileSystemEntityType.file) {
-      CliPrinter.printResult(showFilePath(relativePath(filePath)));
+      CliPrinter.printResult(ShowFilePath(relativePath(filePath)));
     } else if (entityType == FileSystemEntityType.directory) {
       CliPrinter.printResult(ShowFolderPath(relativePath(filePath)));
     }

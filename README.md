@@ -13,8 +13,10 @@ manually creating boilerplate code.
 ## Features
 
 - Generate tests for **classes and top-level functions**
+- Generate tests for **all Dart files inside a directory (recursive)**
 - Automatically create the correct **`test/` folder structure**
-- **Append missing tests** to existing test files
+- **Append missing tests** to existing test files (default)
+- **Overwrite existing tests** when needed
 - **Restore deleted tests** inside groups
 - **Restore deleted groups**
 - Prevent **duplicate test generation**
@@ -26,7 +28,8 @@ manually creating boilerplate code.
   - private methods
   - mixins
   - extensions
-- CLI **help command**
+- Clean and structured **CLI output**
+- CLI **help and debug support**
 
 ## Installation
 
@@ -46,27 +49,23 @@ flutter pub add mocktail --dev
 
 ## Usage
 
-Generate tests for a Dart file:
+### Generate for a single file
 
 ```bash
 dart run flutter_test_gen user_service
 ```
 
-You can also specify a full file path:
+### Generate using full path
 
 ```bash
 dart run flutter_test_gen lib/services/user_service.dart
 ```
 
-## CLI Commands
-
-### Generate tests
+### Generate for all files in a folder
 
 ```bash
-dart run flutter_test_gen <FILE_NAME>
+dart run flutter_test_gen lib/utils
 ```
-
-Default behavior is **append missing tests**.
 
 ### Append missing tests
 
@@ -92,24 +91,16 @@ dart run flutter_test_gen --help
 
 ## Example
 
-### Source file
+### Input
 
 ```dart
-class UserService {
-  int getAge() {
-    return 30;
-  }
-
-  static int add(int a, int b) {
-    return a + b;
-  }
-}
+class UserService { int getAge() => 30; }
 ```
 
 ### Generated test
 
 ```dart
-group('UserService | lib/user_service.dart', () {
+group('UserService', () {
   late UserService service;
 
   setUp(() {
@@ -117,22 +108,7 @@ group('UserService | lib/user_service.dart', () {
   });
 
   test('getAge', () {
-    // Arrange
-
-    // Act
     final result = service.getAge();
-
-    // Assert
-    expect(result, isNotNull);
-  });
-
-  test('add', () {
-    // Arrange
-
-    // Act
-    final result = UserService.add(1, 1);
-
-    // Assert
     expect(result, isNotNull);
   });
 });
@@ -142,12 +118,13 @@ group('UserService | lib/user_service.dart', () {
 
 The generator:
 
+- Supports both **files and directories**
+- Recursively scans folders for Dart files
 - Creates test files inside the **`test/` directory**
 - Groups tests by **class name**
-- Restores deleted tests if they are removed
-- Restores deleted groups if they are removed
+- Restores deleted tests and groups
 - Prevents duplicate test generation
-- Does **not modify existing test structure**
+- Does **not modify existing test structure unnecessarily**
 
 ## Requirements
 
@@ -156,45 +133,25 @@ The generator:
 
 ## Quick Demo
 
-_Generate tests for a service:_
+_Generate tests for a folder:_
 
-dart run flutter_test_gen user_service
+dart run flutter_test_gen lob/utils
 
 _Output:_
 
-✓ Found Dart file  
-✓ Parsed methods  
-✓ Generated test templates  
-✓ Appended missing tests
+📂 lib/utils
 
-## Project Structure
+→ string_utils.dart
 
-```text
-flutter_test_gen
- ├── bin/
- │   └── flutter_test_gen.dart
- ├── lib/
- │   ├── flutter_test_gen.dart
- │   └── src/
- │       ├── generator/
- │       ├── parser/
- │       ├── models/
- │       └── utils/
- ├── example/
- ├── test/
- ├── README.md
- ├── LICENSE
- └── pubspec.yaml
-```
+✓ test/utils/string_utils_test.dart
 
-## Roadmap
+→ math_utils.dart
 
-Planned improvements:
+⚙ mocks
 
-- smarter test data generation
-- automatic mock generation
-- test coverage integration
-- watch mode for automatic test generation
+✓ test/utils/math_utils_test.dart
+
+✓ 2 files processed
 
 ## Contributing
 

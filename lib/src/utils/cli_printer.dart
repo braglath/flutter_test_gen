@@ -1,7 +1,35 @@
 import 'package:flutter_test_gen/src/models/generation_result.dart';
 import 'package:flutter_test_gen/src/utils/ansi.dart';
 
+/// Handles printing CLI output based on [GenerationResult].
+///
+/// [CliPrinter] maps different result states to user-friendly,
+/// color-coded console messages using [Ansi] utilities.
+///
+/// It centralizes all CLI output logic, ensuring:
+/// - Consistent formatting
+/// - Clear success/error messaging
+/// - Easy extensibility for new result types
 class CliPrinter {
+  /// Prints a formatted message based on the given [result].
+  ///
+  /// Uses pattern matching on [GenerationResult] to determine
+  /// the appropriate output and delegates to internal helpers.
+  ///
+  /// Behavior:
+  /// - Displays success messages (e.g., generated, overwritten)
+  /// - Displays warnings (e.g., skipped, no methods found)
+  /// - Displays errors (e.g., invalid path, failure)
+  /// - Handles informational outputs (e.g., file paths, help)
+  /// - Uses ANSI colors for better readability
+  ///
+  /// Parameters:
+  /// - [result]: The result of a generation operation
+  ///
+  /// Example:
+  /// ```dart
+  /// CliPrinter.printResult(Generated(path: 'test/user_test.dart'));
+  /// ```
   static void printResult(GenerationResult result) {
     switch (result) {
       case Generated(:final path, :final count):
@@ -24,7 +52,7 @@ class CliPrinter {
         _multipleFilesFound();
       case InvalidPath(:final path):
         _invalidPath(path);
-      case showFilePath(:final path):
+      case ShowFilePath(:final path):
         _showFilePath(path);
       case CurrentFile(:final file):
         _showCurrentFile(file);

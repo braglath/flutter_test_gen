@@ -1,6 +1,6 @@
 name: flutter_test_gen
 description: A CLI tool to automatically generate Flutter and Dart unit tests. Generates structured test templates for classes and functions to speed up Flutter testing.
-version: 1.0.0
+version: 1.1.0
 repository: https://github.com/braglath/flutter_test_gen.git
 homepage: https://github.com/braglath/flutter_test_gen/blob/main/README.md
 publisher: Flutter Zone
