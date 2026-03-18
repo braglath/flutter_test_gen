@@ -1,3 +1,5 @@
+import 'package:flutter_test_gen/src/models/generation_result.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 import 'package:flutter_test_gen/src/utils/cli_utils.dart';
 
 /// Entry point for handling CLI execution.
@@ -19,7 +21,7 @@ class CliRunner {
   /// Otherwise, it continues processing the command.
   static Future<void> run(List<String> args) async {
     if (_shouldShowHelp(args)) {
-      CliUtils.printHelp();
+      CliPrinter.printResult(ShowHelp());
       return;
     }
 

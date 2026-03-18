@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/models/cli_options.dart';
+import 'package:flutter_test_gen/src/models/generation_result.dart';
 import 'package:flutter_test_gen/src/services/file_resolver.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 
 /// Utility helpers for the command-line interface of `flutter_test_gen`.
 ///
@@ -30,7 +31,7 @@ class CliUtils {
   /// message is printed and the process exits.
   static Future<void> runGenerate(List<String> args) async {
     if (args.isEmpty) {
-      print(AnsiStyles.red('Please provide a file name.'));
+      CliPrinter.printResult(ProvideFileName());
       exit(1);
     }
 
@@ -40,9 +41,9 @@ class CliUtils {
     final entityType = FileSystemEntity.typeSync(filePath);
 
     if (entityType == FileSystemEntityType.file) {
-      print(AnsiStyles.cyan('→ ${relativePath(filePath)}'));
+      CliPrinter.printResult(showFilePath(relativePath(filePath)));
     } else if (entityType == FileSystemEntityType.directory) {
-      print(AnsiStyles.cyan('📂 ${relativePath(filePath)}'));
+      CliPrinter.printResult(ShowFolderPath(relativePath(filePath)));
     }
 
     final generator = TestGenerator();
@@ -62,11 +63,7 @@ class CliUtils {
         overwrite: options.overwrite,
       );
     } else {
-      print(
-        AnsiStyles.red(
-          '\nX Invalid path: $filePath\n',
-        ),
-      );
+      CliPrinter.printResult(InvalidPath(filePath));
       exit(1);
     }
   }
@@ -95,52 +92,6 @@ class CliUtils {
         overwrite: overwrite,
       );
 
-  /// Prints the CLI help message.
-  ///
-  /// Displays usage instructions, available options, and example commands
-  /// for generating tests using `flutter_test_gen`.
-  ///
-  /// This method is typically triggered when the user runs:
-  /// - `flutter_test_gen --help`
-  /// - `flutter_test_gen -h`
-  static void printHelp() {
-    print(
-      AnsiStyles.green('''
-Flutter Test Gen
-
-Usage:
-  flutter_test_gen <path> [options]
-
-Examples:
-  flutter_test_gen user_service
-  flutter_test_gen lib/src/utils
-  flutter_test_gen user_service --overwrite
-
-Options:
-  --append        Append missing tests (default)
-  --overwrite     Replace entire test file
-  --debug         Show verbose logs
-  -h, --help      Show this help message
-
-Notes:
-  • Supports both files and directories
-  • Recursively scans directories
-  • Skips generated files (.g.dart, .freezed.dart)
-
-Examples:
-
-  Generate tests
-    dart run flutter_test_gen user_service
-
-  Overwrite existing tests
-    dart run flutter_test_gen user_service --overwrite
-
-  Append only missing tests
-    dart run flutter_test_gen user_service --append
-'''),
-    );
-  }
-
   /// Prompts the user to select a file when multiple matches are found.
   ///
   /// Displays a numbered list of matching files and reads user input
@@ -161,11 +112,11 @@ Examples:
   /// Exits:
   /// - Terminates the process with exit code `1` if the selection is invalid
   static String selectFile(List<String> matches) {
-    print(AnsiStyles.yellow('Multiple files found:\n'));
+    CliPrinter.printResult(MultipleFilesFound());
 
     for (int i = 0; i < matches.length; i++) {
       final relative = relativePath(matches[i]);
-      print("${AnsiStyles.cyan("${i + 1}.")} $relative");
+      CliPrinter.printResult(ShowRelativePath(i, relative));
     }
 
     stdout.write('\nSelect file: ');
@@ -175,7 +126,7 @@ Examples:
     final index = int.tryParse(input ?? '');
 
     if (index == null || index < 1 || index > matches.length) {
-      print(AnsiStyles.red('Invalid selection.'));
+      CliPrinter.printResult(InvalidSelection());
       exit(1);
     }
 

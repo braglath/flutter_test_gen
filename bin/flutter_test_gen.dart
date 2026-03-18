@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/src/cli/cli_runner.dart';
+import 'package:flutter_test_gen/src/models/generation_result.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 
 void main(List<String> args) async {
   final isDebug = args.contains('--debug');
@@ -11,12 +12,12 @@ void main(List<String> args) async {
   } catch (e, stackTrace) {
     if (isDebug) {
       // Full debug output
-      print(AnsiStyles.red('❌ $e'));
-      print(stackTrace);
+      CliPrinter.printResult(ShowError(e.toString()));
+      CliPrinter.printResult(ShowError(stackTrace.toString()));
     } else {
       // Clean user-friendly error
       final message = e.toString().replaceFirst('Exception: ', '');
-      print(AnsiStyles.red('X $message'));
+      CliPrinter.printResult(ShowError(message));
     }
 
     exit(1);

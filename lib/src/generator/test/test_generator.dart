@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:ansi_styles/ansi_styles.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:flutter_test_gen/src/generator/test/test_file_builder.dart';
+import 'package:flutter_test_gen/src/models/generation_result.dart';
 import 'package:flutter_test_gen/src/parser/dart/dart_parser.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 import 'package:flutter_test_gen/src/utils/path_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/writer/test_writer.dart';
@@ -45,9 +46,7 @@ class TestGenerator {
     if (methods.any((m) =>
         m.constructorDependencies.isNotEmpty ||
         m.parameterDependencies.isNotEmpty)) {
-      print(
-        AnsiStyles.cyan('    ⚙ mocks'),
-      );
+      CliPrinter.printResult(MocksGenerated());
 
       /// Check if mocktail exists in pubspec.yaml
       final project = ProjectUtil()..initialize(filePath);
@@ -55,7 +54,7 @@ class TestGenerator {
     }
 
     if (methods.isEmpty) {
-      print(AnsiStyles.yellow('⚠ No methods found.'));
+      CliPrinter.printResult(NoMethodsFound());
       return;
     }
 
@@ -104,11 +103,7 @@ class TestGenerator {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
 
-      print(
-        AnsiStyles.green(
-          '    ✓ ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Generated(path: PathUtils.relativePath(testPath)));
       return;
     }
 
@@ -116,40 +111,26 @@ class TestGenerator {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
 
-      print(
-        AnsiStyles.green(
-          '    ✓ ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Generated(path: PathUtils.relativePath(testPath)));
       return;
     }
 
     if (overwrite) {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
-
-      print(
-        AnsiStyles.magenta(
-          '    ✎ ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Overwritten(PathUtils.relativePath(testPath)));
       return;
     }
 
     if (append) {
       if (result == null || result == existing) {
-        print(AnsiStyles.yellow('X No new tests to append.'));
+        CliPrinter.printResult(NoNewTest());
         return;
       }
 
       final formattedContent = _format(result);
       await file.writeAsString(formattedContent);
-
-      print(
-        AnsiStyles.blue(
-          '    + ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Appended(PathUtils.relativePath(testPath)));
     }
   }
 
@@ -209,7 +190,7 @@ class TestGenerator {
 
     for (final file in files) {
       try {
-        print('  → ${path.basename(file.path)}');
+        CliPrinter.printResult(CurrentFile(path.basename(file.path)));
 
         await generate(
           file.path,
@@ -219,12 +200,10 @@ class TestGenerator {
 
         count++;
       } catch (e) {
-        print('❌ Failed: ${file.path} -> $e');
+        CliPrinter.printResult(ErrorResult(file.path, e.toString()));
       }
     }
-    print(
-      AnsiStyles.green('✓ $count file${count == 1 ? '' : 's'} processed'),
-    );
+    CliPrinter.printResult(Generated(count: count));
   }
 
   bool _shouldIgnore(String path) =>
