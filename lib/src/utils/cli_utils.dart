@@ -1,9 +1,10 @@
 import 'dart:io';
 
-import 'package:ansi_styles/ansi_styles.dart';
 import 'package:flutter_test_gen/flutter_test_gen.dart';
 import 'package:flutter_test_gen/src/models/cli_options.dart';
+import 'package:flutter_test_gen/src/models/generation_result.dart';
 import 'package:flutter_test_gen/src/services/file_resolver.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 
 /// Utility helpers for the command-line interface of `flutter_test_gen`.
 ///
@@ -30,76 +31,66 @@ class CliUtils {
   /// message is printed and the process exits.
   static Future<void> runGenerate(List<String> args) async {
     if (args.isEmpty) {
-      print(AnsiStyles.red('Please provide a file name.'));
+      CliPrinter.printResult(ProvideFileName());
       exit(1);
     }
 
     final options = CliOptions.fromArgs(args);
-    final fileName = CliUtils.normalizeFileName(options.input);
 
-    final filePath = FileResolver.resolve(fileName);
+    final filePath = FileResolver.resolve(options.input);
+    final entityType = FileSystemEntity.typeSync(filePath);
 
-    print(
-      AnsiStyles.cyan(
-        '\n🚀 Generating tests for ${relativePath(filePath)}\n',
-      ),
-    );
+    if (entityType == FileSystemEntityType.file) {
+      CliPrinter.printResult(showFilePath(relativePath(filePath)));
+    } else if (entityType == FileSystemEntityType.directory) {
+      CliPrinter.printResult(ShowFolderPath(relativePath(filePath)));
+    }
 
     final generator = TestGenerator();
 
-    await generator.generate(
-      filePath,
-      append: options.append,
-      overwrite: options.overwrite,
-    );
+    if (entityType == FileSystemEntityType.file) {
+      await _generateForFile(
+        generator: generator,
+        filePath: filePath,
+        append: options.append,
+        overwrite: options.overwrite,
+      );
+    } else if (entityType == FileSystemEntityType.directory) {
+      await _generateForDirectory(
+        generator: generator,
+        filePath: filePath,
+        append: options.append,
+        overwrite: options.overwrite,
+      );
+    } else {
+      CliPrinter.printResult(InvalidPath(filePath));
+      exit(1);
+    }
   }
 
-  /// Prints the CLI help message.
-  ///
-  /// Displays usage instructions, available options, and example commands
-  /// for generating tests using `flutter_test_gen`.
-  ///
-  /// This method is typically triggered when the user runs:
-  /// - `flutter_test_gen --help`
-  /// - `flutter_test_gen -h`
-  static void printHelp() {
-    print(
-      AnsiStyles.green('''
-Flutter Test Generator
+  static Future<void> _generateForFile({
+    required String filePath,
+    required TestGenerator generator,
+    required bool append,
+    required bool overwrite,
+  }) async =>
+      await generator.generate(
+        filePath,
+        append: append,
+        overwrite: overwrite,
+      );
 
-Usage:
-  dart run flutter_test_gen <file> [options]
-  dart run flutter_test_gen generate <file> [options]
-
-Examples:
-  dart run flutter_test_gen generate user_service
-  dart run flutter_test_gen generate user_service.dart
-  dart run flutter_test_gen generate lib/user_service.dart
-
-Options:
-  --append       Append missing tests (default)
-  --overwrite    Recreate the test file
-  -h, --help     Show this help message
-
-Behavior:
-  • Generates tests for classes and top-level functions
-  • Restores deleted tests inside existing groups
-  • Restores deleted groups
-  • Skips private methods, mixins and extensions
-
-Examples:
-
-  Generate tests
-    dart run flutter_test_gen generate user_service
-
-  Overwrite existing tests
-    dart run flutter_test_gen generate user_service --overwrite
-
-  Append only missing tests
-    dart run flutter_test_gen generate user_service --append
-'''),
-    );
-  }
+  static Future<void> _generateForDirectory({
+    required String filePath,
+    required TestGenerator generator,
+    required bool append,
+    required bool overwrite,
+  }) async =>
+      await generator.generateForDirectory(
+        filePath,
+        append: append,
+        overwrite: overwrite,
+      );
 
   /// Prompts the user to select a file when multiple matches are found.
   ///
@@ -121,11 +112,11 @@ Examples:
   /// Exits:
   /// - Terminates the process with exit code `1` if the selection is invalid
   static String selectFile(List<String> matches) {
-    print(AnsiStyles.yellow('Multiple files found:\n'));
+    CliPrinter.printResult(MultipleFilesFound());
 
     for (int i = 0; i < matches.length; i++) {
       final relative = relativePath(matches[i]);
-      print("${AnsiStyles.cyan("${i + 1}.")} $relative");
+      CliPrinter.printResult(ShowRelativePath(i, relative));
     }
 
     stdout.write('\nSelect file: ');
@@ -135,7 +126,7 @@ Examples:
     final index = int.tryParse(input ?? '');
 
     if (index == null || index < 1 || index > matches.length) {
-      print(AnsiStyles.red('Invalid selection.'));
+      CliPrinter.printResult(InvalidSelection());
       exit(1);
     }
 
@@ -159,21 +150,6 @@ Examples:
     }
 
     return absolutePath;
-  }
-
-  /// Normalizes a file name provided through CLI arguments.
-  ///
-  /// If the provided [input] does not include the `.dart` extension,
-  /// it will be automatically appended.
-  ///
-  /// Example:
-  /// `user_service` → `user_service.dart`
-  static String normalizeFileName(String input) {
-    if (input.endsWith('.dart')) {
-      return input;
-    }
-
-    return '$input.dart';
   }
 
   /// Searches for Dart files matching [fileName] inside the project.

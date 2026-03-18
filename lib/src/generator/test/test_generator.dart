@@ -1,12 +1,14 @@
 import 'dart:io';
 
-import 'package:ansi_styles/ansi_styles.dart';
 import 'package:dart_style/dart_style.dart';
 import 'package:flutter_test_gen/src/generator/test/test_file_builder.dart';
+import 'package:flutter_test_gen/src/models/generation_result.dart';
 import 'package:flutter_test_gen/src/parser/dart/dart_parser.dart';
+import 'package:flutter_test_gen/src/utils/cli_printer.dart';
 import 'package:flutter_test_gen/src/utils/path_utils.dart';
 import 'package:flutter_test_gen/src/utils/project_utils.dart';
 import 'package:flutter_test_gen/src/writer/test_writer.dart';
+import 'package:path/path.dart' as path;
 
 /// A singleton service responsible for generating test files.
 ///
@@ -44,11 +46,7 @@ class TestGenerator {
     if (methods.any((m) =>
         m.constructorDependencies.isNotEmpty ||
         m.parameterDependencies.isNotEmpty)) {
-      print(
-        AnsiStyles.cyan(
-          '🔧 Detected constructor dependencies → generating mocks\n',
-        ),
-      );
+      CliPrinter.printResult(MocksGenerated());
 
       /// Check if mocktail exists in pubspec.yaml
       final project = ProjectUtil()..initialize(filePath);
@@ -56,7 +54,7 @@ class TestGenerator {
     }
 
     if (methods.isEmpty) {
-      print(AnsiStyles.yellow('⚠ No methods found.'));
+      CliPrinter.printResult(NoMethodsFound());
       return;
     }
 
@@ -105,11 +103,7 @@ class TestGenerator {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
 
-      print(
-        AnsiStyles.green(
-          '✓ Generated: ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Generated(path: PathUtils.relativePath(testPath)));
       return;
     }
 
@@ -117,40 +111,26 @@ class TestGenerator {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
 
-      print(
-        AnsiStyles.green(
-          '✓ Generated: ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Generated(path: PathUtils.relativePath(testPath)));
       return;
     }
 
     if (overwrite) {
       final formattedContent = _format(content);
       await file.writeAsString(formattedContent);
-
-      print(
-        AnsiStyles.magenta(
-          '✎ Overwritten: ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Overwritten(PathUtils.relativePath(testPath)));
       return;
     }
 
     if (append) {
       if (result == null || result == existing) {
-        print(AnsiStyles.yellow('✓ No new tests to append.'));
+        CliPrinter.printResult(NoNewTest());
         return;
       }
 
       final formattedContent = _format(result);
       await file.writeAsString(formattedContent);
-
-      print(
-        AnsiStyles.blue(
-          '➕ Appended tests: ${PathUtils.relativePath(testPath)}',
-        ),
-      );
+      CliPrinter.printResult(Appended(PathUtils.relativePath(testPath)));
     }
   }
 
@@ -164,4 +144,71 @@ class TestGenerator {
       return code;
     }
   }
+
+  /// Generates test files for all Dart files within a directory.
+  ///
+  /// Recursively scans the given [dirPath] for `.dart` files and
+  /// generates tests for each eligible file.
+  ///
+  /// Parameters:
+  /// - [dirPath]: Path to the target directory
+  /// - [append]: Whether to append/update existing test files
+  /// - [overwrite]: Whether to overwrite existing test files
+  ///
+  /// Behavior:
+  /// - Validates that the directory exists
+  /// - Recursively processes all `.dart` files
+  /// - Skips ignored files using `_shouldIgnore`
+  /// - Calls `generate` for each file
+  /// - Logs progress and errors to the console
+  /// - Continues processing even if some files fail
+  ///
+  /// Output:
+  /// - Prints each processed file name
+  /// - Displays a success summary with total processed files
+  ///
+  /// Throws:
+  /// - [Exception] if the directory does not exist
+  Future<void> generateForDirectory(
+    String dirPath, {
+    required bool append,
+    required bool overwrite,
+  }) async {
+    final dir = Directory(dirPath);
+
+    if (!dir.existsSync()) {
+      throw Exception('Directory not found: $dirPath');
+    }
+
+    final files = dir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'))
+        .where((file) => !_shouldIgnore(file.path));
+
+    int count = 0;
+
+    for (final file in files) {
+      try {
+        CliPrinter.printResult(CurrentFile(path.basename(file.path)));
+
+        await generate(
+          file.path,
+          append: append,
+          overwrite: overwrite,
+        );
+
+        count++;
+      } catch (e) {
+        CliPrinter.printResult(ErrorResult(file.path, e.toString()));
+      }
+    }
+    CliPrinter.printResult(Generated(count: count));
+  }
+
+  bool _shouldIgnore(String path) =>
+      path.endsWith('.g.dart') ||
+      path.endsWith('.freezed.dart') ||
+      path.contains('/test/') ||
+      path.contains('.mocks.dart');
 }
