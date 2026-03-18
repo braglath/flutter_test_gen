@@ -49,19 +49,13 @@ flutter pub add mocktail --dev
 Generate tests for a Dart file:
 
 ```bash
-dart run flutter_test_gen generate user_service
+dart run flutter_test_gen user_service
 ```
 
 You can also specify a full file path:
 
 ```bash
-dart run flutter_test_gen generate lib/services/user_service.dart
-```
-
-For convenience, the command also works without `generate`:
-
-```bash
-dart run flutter_test_gen user_service
+dart run flutter_test_gen lib/services/user_service.dart
 ```
 
 ## CLI Commands
@@ -69,7 +63,7 @@ dart run flutter_test_gen user_service
 ### Generate tests
 
 ```bash
-dart run flutter_test_gen generate <FILE_NAME>
+dart run flutter_test_gen <FILE_NAME>
 ```
 
 Default behavior is **append missing tests**.
@@ -77,7 +71,7 @@ Default behavior is **append missing tests**.
 ### Append missing tests
 
 ```bash
-dart run flutter_test_gen generate <FILE_NAME> --append
+dart run flutter_test_gen <FILE_NAME> --append
 ```
 
 Adds only tests that do not already exist.
@@ -85,7 +79,7 @@ Adds only tests that do not already exist.
 ### Overwrite existing tests
 
 ```bash
-dart run flutter_test_gen generate <FILE_NAME> --overwrite
+dart run flutter_test_gen <FILE_NAME> --overwrite
 ```
 
 Recreates the test file completely.
@@ -164,7 +158,7 @@ The generator:
 
 _Generate tests for a service:_
 
-dart run flutter_test_gen generate user_service
+dart run flutter_test_gen user_service
 
 _Output:_
 

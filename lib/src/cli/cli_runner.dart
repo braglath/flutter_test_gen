@@ -1,5 +1,4 @@
 import 'package:flutter_test_gen/src/utils/cli_utils.dart';
-import 'package:flutter_test_gen/src/utils/logger.dart';
 
 /// Entry point for handling CLI execution.
 ///
@@ -23,8 +22,6 @@ class CliRunner {
       CliUtils.printHelp();
       return;
     }
-
-    debugMode = args.contains('--debug');
 
     final command = args.first;
 

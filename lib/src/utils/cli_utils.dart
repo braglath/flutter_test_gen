@@ -106,38 +106,37 @@ class CliUtils {
   static void printHelp() {
     print(
       AnsiStyles.green('''
-Flutter Test Generator
+Flutter Test Gen
 
 Usage:
-  dart run flutter_test_gen <file> [options]
-  dart run flutter_test_gen generate <file> [options]
+  flutter_test_gen <path> [options]
 
 Examples:
-  dart run flutter_test_gen generate user_service
-  dart run flutter_test_gen generate user_service.dart
-  dart run flutter_test_gen generate lib/user_service.dart
+  flutter_test_gen user_service
+  flutter_test_gen lib/src/utils
+  flutter_test_gen user_service --overwrite
 
 Options:
-  --append       Append missing tests (default)
-  --overwrite    Recreate the test file
-  -h, --help     Show this help message
+  --append        Append missing tests (default)
+  --overwrite     Replace entire test file
+  --debug         Show verbose logs
+  -h, --help      Show this help message
 
-Behavior:
-  • Generates tests for classes and top-level functions
-  • Restores deleted tests inside existing groups
-  • Restores deleted groups
-  • Skips private methods, mixins and extensions
+Notes:
+  • Supports both files and directories
+  • Recursively scans directories
+  • Skips generated files (.g.dart, .freezed.dart)
 
 Examples:
 
   Generate tests
-    dart run flutter_test_gen generate user_service
+    dart run flutter_test_gen user_service
 
   Overwrite existing tests
-    dart run flutter_test_gen generate user_service --overwrite
+    dart run flutter_test_gen user_service --overwrite
 
   Append only missing tests
-    dart run flutter_test_gen generate user_service --append
+    dart run flutter_test_gen user_service --append
 '''),
     );
   }
